@@ -194,10 +194,18 @@ func makeDMGBackground() throws -> CGImage {
         context: context
     )
     drawCenteredText(
-        "Drag the app into Applications",
+        "1. Drag Typeless Quiet into Applications",
         font: .systemFont(ofSize: 14, weight: .regular),
         color: NSColor(white: 0.39, alpha: 1),
         baselineY: 330,
+        width: canvasWidth,
+        context: context
+    )
+    drawCenteredText(
+        "2. Open it from Applications",
+        font: .systemFont(ofSize: 14, weight: .regular),
+        color: NSColor(white: 0.39, alpha: 1),
+        baselineY: 307,
         width: canvasWidth,
         context: context
     )
@@ -219,15 +227,6 @@ func makeDMGBackground() throws -> CGImage {
     context.addLine(to: CGPoint(x: endX - 1, y: arrowY - 13))
     context.closePath()
     context.fillPath()
-
-    drawCenteredText(
-        "Developer ID signed · Apple notarized",
-        font: .systemFont(ofSize: 11, weight: .regular),
-        color: NSColor(white: 0.48, alpha: 1),
-        baselineY: 32,
-        width: canvasWidth,
-        context: context
-    )
 
     guard let image = context.makeImage() else {
         throw NSError(domain: "TypelessQuietAssets", code: 5)

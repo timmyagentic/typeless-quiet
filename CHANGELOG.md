@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- 权限缺失时显示可见的原生设置引导，不再被旧的一次性提示标记静默跳过。
+- 系统辅助功能提示按 App build 去重；新 build 会重新尝试，拒绝后仍保留明确的系统设置入口。
+- DMG 安装图改为“拖入 Applications，然后从 Applications 打开”的两步说明。
+
 ## [0.1.2] - 2026-08-24
 
 - 增加原创 App 图标，改善 Finder、Applications 和系统设置中的识别度。

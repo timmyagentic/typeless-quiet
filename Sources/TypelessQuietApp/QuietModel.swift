@@ -16,10 +16,16 @@ final class QuietModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private let enabledDefaultsKey = "TypelessQuietEnabled"
-    private let accessibilityPromptHandledKey = "InitialSetup.AccessibilityPrompt.v1"
+    private let accessibilityPromptedBuildKey = "InitialSetup.AccessibilityPromptedBuild.v2"
     private let launchAtLoginInitializedKey = "InitialSetup.LaunchAtLogin.v1"
     private let initialSetupPolicy = InitialSetupPolicy()
     private var permissionTimer: Timer?
+
+    private lazy var accessibilityOnboarding = AccessibilityOnboardingController(
+        openSettings: { [weak self] in
+            self?.requestAccessibility()
+        }
+    )
 
     private lazy var monitor = TypelessMonitor { [weak self] event in
         self?.handleMonitorEvent(event)
@@ -82,9 +88,13 @@ final class QuietModel: ObservableObject {
     }
 
     func requestAccessibility() {
-        defaults.set(true, forKey: accessibilityPromptHandledKey)
+        accessibilityOnboarding.show()
         promptForAccessibility()
         openAccessibilitySettings()
+    }
+
+    func showAccessibilityOnboarding() {
+        accessibilityOnboarding.show()
     }
 
     private func promptForAccessibility() {
@@ -128,6 +138,11 @@ final class QuietModel: ObservableObject {
         accessibilityGranted = current
         issueText = nil
         monitor.setWatchingAllowed(isEnabled && current)
+        if current {
+            accessibilityOnboarding.close()
+        } else {
+            accessibilityOnboarding.show()
+        }
     }
 
     private func refreshLaunchAtLoginStatus() {
@@ -139,16 +154,26 @@ final class QuietModel: ObservableObject {
     private func performInitialSetup() {
         let plan = initialSetupPolicy.plan(for: InitialSetupState(
             accessibilityGranted: accessibilityGranted,
-            accessibilityPromptHandled: defaults.bool(forKey: accessibilityPromptHandledKey),
+            accessibilityPromptedBuild: defaults.string(
+                forKey: accessibilityPromptedBuildKey
+            ),
+            currentBuild: currentBuild,
             launchAtLoginInitialized: defaults.bool(forKey: launchAtLoginInitializedKey),
             launchAtLoginStatus: launchAtLoginSetupStatus
         ))
 
-        if plan.markAccessibilityPromptHandled {
-            defaults.set(true, forKey: accessibilityPromptHandledKey)
+        if plan.presentAccessibilityOnboarding {
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                self?.accessibilityOnboarding.show()
+                if plan.promptForAccessibility {
+                    await Task.yield()
+                    self?.promptForAccessibility()
+                }
+            }
         }
-        if plan.promptForAccessibility {
-            promptForAccessibility()
+        if plan.recordAccessibilityPromptBuild {
+            defaults.set(currentBuild, forKey: accessibilityPromptedBuildKey)
         }
 
         if plan.markLaunchAtLoginInitialized {
@@ -163,6 +188,11 @@ final class QuietModel: ObservableObject {
         }
 
         refreshLaunchAtLoginStatus()
+    }
+
+    private var currentBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            ?? "unknown"
     }
 
     private var launchAtLoginSetupStatus: LaunchAtLoginSetupStatus {

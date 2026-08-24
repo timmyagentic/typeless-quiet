@@ -48,9 +48,10 @@ Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会
 - 备用资产：`Typeless-Quiet-0.1.2-macos-arm64.zip`
 - 校验：两种格式均提供 `.sha256` 文件
 
-打开 DMG 后，将 Typeless Quiet 拖入 Applications 即可。App 与 DMG 都已完成 Apple
-notarization 与 stapling。公证和 Developer ID 签名不代表真实弹窗 E2E 已验证；该项
-仍需在服务器提示实际出现时完成。
+打开 DMG 后，先将 Typeless Quiet 拖入 Applications，再从 Applications 打开它。App
+与 DMG 都已完成 Apple notarization 与 stapling。当前源码已经增加可见的原生授权引导，
+并修复旧偏好可能让提示静默跳过的问题；这项修复尚未进入上述 v0.1.2 Release。公证和
+Developer ID 签名不代表真实弹窗 E2E 已验证；该项仍需在服务器提示实际出现时完成。
 
 ## 构建与验证
 
@@ -101,20 +102,24 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 
 首次启动后：
 
-1. Typeless Quiet 会立即触发 macOS 官方辅助功能授权提示。
-2. 按提示打开系统设置，并批准 Typeless Quiet。
-3. 应用会默认注册“登录时启动”；若系统要求额外批准，菜单会显示对应状态。
-4. 你随时可以从菜单关闭登录启动，应用不会在下次启动时重新强制开启。
+1. 权限缺失时，Typeless Quiet 会立即显示可见的原生设置引导。
+2. 每个 App build 最多自动尝试一次 macOS 官方权限提示；若系统不再重复显示，使用引导
+   中的按钮直接打开系统设置。
+3. 在“设备控制和数据访问”（部分 macOS 显示为“辅助功能”）中批准 Typeless Quiet。
+4. 应用会默认注册“登录时启动”；若系统要求额外批准，菜单会显示对应状态。
+5. 你随时可以从菜单关闭登录启动，应用不会在下次启动时重新强制开启。
 
-辅助功能权限最终仍必须由用户批准，应用不会静默绕过 macOS 权限。若首次提示被拒绝，
-应用不会在每次启动时重复打扰；菜单中仍保留手动授权入口。
+系统权限最终仍必须由用户批准，应用不会静默绕过 macOS 权限。若系统提示被拒绝，原生
+设置引导会在权限仍缺失的下次启动再次出现，不会再被历史的一次性标记静默跳过；菜单中
+也保留手动入口。
 
 ## 卸载
 
 1. 在菜单中关闭“登录时启动”。
 2. 退出 Typeless Quiet。
 3. 将 `~/Applications/Typeless Quiet.app` 移到废纸篓。
-4. 如需清理授权，在“系统设置 → 隐私与安全性 → 辅助功能”移除它。
+4. 如需清理授权，在“系统设置 → 隐私与安全性 → 设备控制和数据访问”（部分 macOS
+   显示为“辅助功能”）移除它。
 
 ## 运行状态与日志
 

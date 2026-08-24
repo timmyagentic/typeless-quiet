@@ -29,8 +29,8 @@ struct TypelessQuietApplication: App {
             if model.accessibilityGranted {
                 Label("辅助功能权限已授予", systemImage: "checkmark.shield")
             } else {
-                Button("授予辅助功能权限…") {
-                    model.requestAccessibility()
+                Button("显示授权引导…") {
+                    model.showAccessibilityOnboarding()
                 }
                 Button("打开辅助功能设置") {
                     model.openAccessibilitySettings()
