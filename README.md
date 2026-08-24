@@ -1,0 +1,117 @@
+# Typeless Quiet
+
+[![CI](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml)
+
+一个轻量、原生的 macOS 菜单栏工具，只负责自动关闭 Typeless 中标题为
+`Upgrade for enhanced accuracy` 的付费升级提示。
+
+Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
+
+> 当前是源码预览版：匹配器和构建门禁已经自动验证，但服务器下发提示的真实客户端
+> AX 结构仍待现场验证。仓库目前不提供已 notarize 的二进制 Release。
+
+## 为什么不是 Hammerspoon
+
+Typeless Quiet 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm、
+Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会拦截网络请求。
+
+应用需要常驻，但只在 Typeless 运行时连接其 Accessibility 树。Typeless 未运行时，
+它只等待系统的应用启动通知。
+
+## 安全边界
+
+规则必须同时满足以下条件才会执行 `AXPress`：
+
+1. 目标进程 Bundle ID 精确等于 `now.typeless.desktop`。
+2. 容器角色精确等于 `AXUserInterfaceTooltip`。
+3. 容器或后代文本精确等于 `Upgrade for enhanced accuracy`。
+4. 关闭候选是目标卡片的后代 `AXButton`。
+5. 候选没有 Accessibility 名称，尺寸在 14–20 pt 之间，位于卡片内部右上角。
+6. 候选支持 `AXPress`，并且全卡片中恰好只有一个候选。
+7. 执行动作前重新抓取一次 AX 树，结果必须与首次判断完全一致。
+
+任一条件不满足、遍历超过上限、出现多个目标卡片或多个按钮时，应用都会停止本次操作。
+它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。
+
+## 系统要求
+
+- macOS 13 或更高版本
+- 构建时需要 Xcode/Swift 工具链
+- 运行时需要用户手动授予“辅助功能”权限
+
+## 构建与验证
+
+```bash
+git clone https://github.com/timmyagentic/typeless-quiet.git
+cd typeless-quiet
+make verify
+```
+
+验证通过后，应用位于：
+
+```text
+dist/Typeless Quiet.app
+```
+
+默认构建使用本机 ad-hoc 签名。如果需要在多次本地升级后尽量保持稳定的应用身份，
+可以传入 Keychain 中已有的固定代码签名证书：
+
+```bash
+CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
+```
+
+本地 Developer ID 签名不等于公证；对外分发前仍需单独完成 notarization。
+
+## 本机安装
+
+从源码构建后，默认安装到 `~/Applications`，不会覆盖现有副本：
+
+```bash
+./scripts/install.sh
+```
+
+升级本地副本时，旧版本会先移动为带时间戳的备份：
+
+```bash
+./scripts/install.sh --replace
+```
+
+首次启动后：
+
+1. 在菜单栏打开 Typeless Quiet。
+2. 点击“授予辅助功能权限”。
+3. 在系统设置中批准 Typeless Quiet。
+4. 回到菜单，按需开启“登录时启动”。
+
+辅助功能权限和登录项都必须由用户批准，应用不会静默绕过 macOS 权限。
+
+## 卸载
+
+1. 在菜单中关闭“登录时启动”。
+2. 退出 Typeless Quiet。
+3. 将 `~/Applications/Typeless Quiet.app` 移到废纸篓。
+4. 如需清理授权，在“系统设置 → 隐私与安全性 → 辅助功能”移除它。
+
+## 运行状态与日志
+
+菜单栏会显示等待 Typeless、正在监听、缺少权限、暂停或 fail-closed 原因。
+系统日志只记录规则结果，不记录输入内容或其他界面文本：
+
+```bash
+log stream --predicate 'subsystem == "io.github.timmyagentic.TypelessQuiet"'
+```
+
+## 当前验证限制
+
+匹配器、Release 构建、应用包结构和签名可以自动验证；但目标提示由服务器下发，
+只有它实际出现时才能确认 Typeless 当前版本暴露的 AX Role、层级和几何仍与规则一致。
+在完成这项现场验证前，真实自动关闭行为应视为 `UNVERIFIED`。
+
+## 参与贡献
+
+欢迎提交 Issue 或 Pull Request。涉及匹配范围的修改必须附带负例测试；规则应继续保持
+fail closed，不能改成全局 Close 按钮搜索、模糊标题或屏幕坐标点击。
+
+## License
+
+[MIT](LICENSE)
