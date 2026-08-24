@@ -7,7 +7,7 @@
 
 Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
-> `v0.1.2` 提供 macOS 13+ Apple Silicon arm64 下载。App 已使用 Developer ID 签名、
+> `v0.1.3` 提供 macOS 13+ Apple Silicon arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
 
@@ -40,18 +40,18 @@ Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
 
-## 下载 v0.1.2
+## 下载 v0.1.3
 
-- [Typeless Quiet v0.1.2 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.2)
+- [Typeless Quiet v0.1.3 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.3)
 - 平台：macOS 13+，Apple Silicon arm64
-- 推荐资产：`Typeless-Quiet-0.1.2-macos-arm64.dmg`
-- 备用资产：`Typeless-Quiet-0.1.2-macos-arm64.zip`
+- 推荐资产：`Typeless-Quiet-0.1.3-macos-arm64.dmg`
+- 备用资产：`Typeless-Quiet-0.1.3-macos-arm64.zip`
 - 校验：两种格式均提供 `.sha256` 文件
 
 打开 DMG 后，先将 Typeless Quiet 拖入 Applications，再从 Applications 打开它。App
-与 DMG 都已完成 Apple notarization 与 stapling。当前源码已经增加可见的原生授权引导，
-并修复旧偏好可能让提示静默跳过的问题；这项修复尚未进入上述 v0.1.2 Release。公证和
-Developer ID 签名不代表真实弹窗 E2E 已验证；该项仍需在服务器提示实际出现时完成。
+会在权限缺失时显示可见的原生授权引导，并提供直达系统设置的按钮。App 与 DMG 都已
+完成 Apple notarization 与 stapling。公证和 Developer ID 签名不代表真实弹窗 E2E 已
+验证；该项仍需在服务器提示实际出现时完成。
 
 ## 构建与验证
 
