@@ -34,12 +34,17 @@ cp "$repo_root/Resources/PkgInfo" "$app_path/Contents/PkgInfo"
 chmod 755 "$app_path/Contents/MacOS/TypelessQuiet"
 
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null
-codesign \
-  --force \
-  --sign "$code_sign_identity" \
-  --options runtime \
-  --timestamp=none \
-  "$app_path"
+codesign_arguments=(
+  --force
+  --sign "$code_sign_identity"
+  --options runtime
+)
+if [[ "$code_sign_identity" == "-" ]]; then
+  codesign_arguments+=(--timestamp=none)
+else
+  codesign_arguments+=(--timestamp)
+fi
+codesign "${codesign_arguments[@]}" "$app_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 
 echo "$app_path"
