@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import Combine
 import ServiceManagement
+import TypelessQuietCore
 
 @MainActor
 final class QuietModel: ObservableObject {
@@ -15,6 +16,9 @@ final class QuietModel: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private let enabledDefaultsKey = "TypelessQuietEnabled"
+    private let accessibilityPromptHandledKey = "InitialSetup.AccessibilityPrompt.v1"
+    private let launchAtLoginInitializedKey = "InitialSetup.LaunchAtLogin.v1"
+    private let initialSetupPolicy = InitialSetupPolicy()
     private var permissionTimer: Timer?
 
     private lazy var monitor = TypelessMonitor { [weak self] event in
@@ -30,6 +34,7 @@ final class QuietModel: ObservableObject {
 
         accessibilityGranted = AXIsProcessTrusted()
         refreshLaunchAtLoginStatus()
+        performInitialSetup()
         monitor.start()
         monitor.setWatchingAllowed(isEnabled && accessibilityGranted)
 
@@ -77,9 +82,14 @@ final class QuietModel: ObservableObject {
     }
 
     func requestAccessibility() {
+        defaults.set(true, forKey: accessibilityPromptHandledKey)
+        promptForAccessibility()
+        openAccessibilitySettings()
+    }
+
+    private func promptForAccessibility() {
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
-        openAccessibilitySettings()
     }
 
     func openAccessibilitySettings() {
@@ -90,6 +100,7 @@ final class QuietModel: ObservableObject {
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
+        defaults.set(true, forKey: launchAtLoginInitializedKey)
         do {
             if enabled {
                 try SMAppService.mainApp.register()
@@ -123,6 +134,50 @@ final class QuietModel: ObservableObject {
         let status = SMAppService.mainApp.status
         launchAtLoginEnabled = status == .enabled
         launchAtLoginRequiresApproval = status == .requiresApproval
+    }
+
+    private func performInitialSetup() {
+        let plan = initialSetupPolicy.plan(for: InitialSetupState(
+            accessibilityGranted: accessibilityGranted,
+            accessibilityPromptHandled: defaults.bool(forKey: accessibilityPromptHandledKey),
+            launchAtLoginInitialized: defaults.bool(forKey: launchAtLoginInitializedKey),
+            launchAtLoginStatus: launchAtLoginSetupStatus
+        ))
+
+        if plan.markAccessibilityPromptHandled {
+            defaults.set(true, forKey: accessibilityPromptHandledKey)
+        }
+        if plan.promptForAccessibility {
+            promptForAccessibility()
+        }
+
+        if plan.markLaunchAtLoginInitialized {
+            defaults.set(true, forKey: launchAtLoginInitializedKey)
+        } else if plan.registerLaunchAtLogin {
+            do {
+                try SMAppService.mainApp.register()
+                defaults.set(true, forKey: launchAtLoginInitializedKey)
+            } catch {
+                issueText = "无法默认启用登录时启动：\(error.localizedDescription)"
+            }
+        }
+
+        refreshLaunchAtLoginStatus()
+    }
+
+    private var launchAtLoginSetupStatus: LaunchAtLoginSetupStatus {
+        switch SMAppService.mainApp.status {
+        case .notRegistered:
+            return .notRegistered
+        case .enabled:
+            return .enabled
+        case .requiresApproval:
+            return .requiresApproval
+        case .notFound:
+            return .unavailable
+        @unknown default:
+            return .unavailable
+        }
     }
 
     private func handleMonitorEvent(_ event: TypelessMonitorEvent) {
