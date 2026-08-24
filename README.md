@@ -7,8 +7,9 @@
 
 Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
-> 当前是源码预览版：匹配器和构建门禁已经自动验证，但服务器下发提示的真实客户端
-> AX 结构仍待现场验证。仓库目前不提供已 notarize 的二进制 Release。
+> `v0.1.0` 提供 macOS 13+ Apple Silicon arm64 下载。匹配器和构建门禁已经自动验证，
+> 但服务器下发提示的真实客户端 AX 结构仍待现场验证；下载 App 已使用 Developer ID
+> 签名，但没有 Apple notarization。
 
 ## 为什么不是 Hammerspoon
 
@@ -38,6 +39,16 @@ Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会
 - macOS 13 或更高版本
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
+
+## 下载 v0.1.0
+
+- [Typeless Quiet v0.1.0 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.0)
+- 平台：macOS 13+，Apple Silicon arm64
+- 资产：`Typeless-Quiet-0.1.0-macos-arm64.zip`
+- 校验：同页提供 `.sha256` 文件
+
+此构建没有 notarization，macOS Gatekeeper 会把它识别为未公证 Developer ID 应用。
+如果不能接受这一限制，请从源码自行构建。Developer ID 签名不代表真实弹窗 E2E 已验证。
 
 ## 构建与验证
 
