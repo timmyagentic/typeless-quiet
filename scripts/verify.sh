@@ -18,7 +18,10 @@ codesign --verify --deep --strict --verbose=2 "$app_path"
 test "$(plutil -extract CFBundleIdentifier raw -o - "$app_path/Contents/Info.plist")" = \
   "io.github.timmyagentic.TypelessQuiet"
 test "$(plutil -extract LSUIElement raw -o - "$app_path/Contents/Info.plist")" = "true"
+test "$(plutil -extract CFBundleIconFile raw -o - "$app_path/Contents/Info.plist")" = "AppIcon"
 test -x "$binary_path"
+test -f "$app_path/Contents/Resources/AppIcon.icns"
+cmp -s "$repo_root/Resources/AppIcon.icns" "$app_path/Contents/Resources/AppIcon.icns"
 
 if otool -L "$binary_path" | grep -Eiq 'Hammerspoon|node'; then
   echo "Unexpected third-party runtime dependency found" >&2

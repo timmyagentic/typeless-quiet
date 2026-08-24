@@ -31,6 +31,7 @@ mkdir -p "$app_path/Contents/MacOS" "$app_path/Contents/Resources"
 cp "$binary_dir/TypelessQuiet" "$app_path/Contents/MacOS/TypelessQuiet"
 cp "$repo_root/Resources/Info.plist" "$app_path/Contents/Info.plist"
 cp "$repo_root/Resources/PkgInfo" "$app_path/Contents/PkgInfo"
+cp "$repo_root/Resources/AppIcon.icns" "$app_path/Contents/Resources/AppIcon.icns"
 chmod 755 "$app_path/Contents/MacOS/TypelessQuiet"
 
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null

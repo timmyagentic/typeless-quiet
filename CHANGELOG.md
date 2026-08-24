@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2026-08-24
+
+- 增加原创 App 图标，改善 Finder、Applications 和系统设置中的识别度。
+- 发布标准 DMG 拖拽安装窗口：App、Applications alias 和清晰安装箭头。
+- App 与 DMG 分别完成 Developer ID 签名、Apple notarization、stapling 和 Gatekeeper 验证。
+- 保留 ZIP 作为备用下载格式。
+
 ## [0.1.1] - 2026-08-24
 
 - 首次启动缺少辅助功能权限时立即触发 macOS 官方授权提示；只自动提示一次。
