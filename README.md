@@ -7,7 +7,7 @@
 
 Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
-> `v0.1.4` 提供 macOS 13+ Apple Silicon arm64 下载。App 已使用 Developer ID 签名、
+> `v0.1.5` 提供 macOS 13+ Apple Silicon arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
 
@@ -41,12 +41,12 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
 
-## 下载 v0.1.4
+## 下载 v0.1.5
 
-- [Typeless Quiet v0.1.4 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.4)
+- [Typeless Quiet v0.1.5 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.5)
 - 平台：macOS 13+，Apple Silicon arm64
-- 推荐资产：`Typeless-Quiet-0.1.4-macos-arm64.dmg`
-- 备用资产：`Typeless-Quiet-0.1.4-macos-arm64.zip`
+- 推荐资产：`Typeless-Quiet-0.1.5-macos-arm64.dmg`
+- 备用资产：`Typeless-Quiet-0.1.5-macos-arm64.zip`
 - 校验：两种格式均提供 `.sha256` 文件
 
 打开 DMG 后，先将 Typeless Quiet 拖入 Applications，再从 Applications 打开它。App
