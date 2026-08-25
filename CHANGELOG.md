@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.4] - 2026-08-25
 
 - 将 400ms 全量 AX 轮询改为 AXObserver 主导：监听 application 与 window 的创建、布局和激活事件。
 - 连续 AX 通知合并为 80ms debounce；Observer 有效时只保留 8 秒 watchdog，完全不可用时使用 1 秒 fallback。
