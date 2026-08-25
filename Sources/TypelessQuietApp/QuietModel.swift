@@ -21,6 +21,8 @@ final class QuietModel: ObservableObject {
     private let initialSetupPolicy = InitialSetupPolicy()
     private var permissionTimer: Timer?
 
+    private lazy var mainWindow = MainWindowController(model: self)
+
     private lazy var accessibilityOnboarding = AccessibilityOnboardingController(
         openSettings: { [weak self] in
             self?.requestAccessibility()
@@ -97,6 +99,14 @@ final class QuietModel: ObservableObject {
         accessibilityOnboarding.show()
     }
 
+    func showPrimaryInterface() {
+        if accessibilityGranted {
+            mainWindow.show()
+        } else {
+            accessibilityOnboarding.show()
+        }
+    }
+
     private func promptForAccessibility() {
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
@@ -140,7 +150,9 @@ final class QuietModel: ObservableObject {
         monitor.setWatchingAllowed(isEnabled && current)
         if current {
             accessibilityOnboarding.close()
+            mainWindow.show()
         } else {
+            mainWindow.close()
             accessibilityOnboarding.show()
         }
     }

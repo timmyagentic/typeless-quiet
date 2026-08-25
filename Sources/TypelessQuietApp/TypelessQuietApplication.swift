@@ -2,7 +2,17 @@ import SwiftUI
 
 @main
 struct TypelessQuietApplication: App {
-    @StateObject private var model = QuietModel()
+    @NSApplicationDelegateAdaptor(TypelessQuietAppDelegate.self)
+    private var appDelegate
+    @StateObject private var model: QuietModel
+
+    init() {
+        let model = QuietModel()
+        _model = StateObject(wrappedValue: model)
+        MainWindowRequestRouter.handler = { [weak model] in
+            model?.showPrimaryInterface()
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -14,6 +24,12 @@ struct TypelessQuietApplication: App {
 
             if let issueText = model.issueText {
                 Text(issueText)
+            }
+
+            Divider()
+
+            Button("打开 Typeless Quiet") {
+                model.showPrimaryInterface()
             }
 
             Divider()

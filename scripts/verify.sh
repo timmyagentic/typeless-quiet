@@ -18,9 +18,9 @@ codesign --verify --deep --strict --verbose=2 "$app_path"
 test "$(plutil -extract CFBundleIdentifier raw -o - "$app_path/Contents/Info.plist")" = \
   "io.github.timmyagentic.TypelessQuiet"
 test "$(plutil -extract CFBundleShortVersionString raw -o - \
-  "$app_path/Contents/Info.plist")" = "0.1.4"
+  "$app_path/Contents/Info.plist")" = "0.1.5"
 test "$(plutil -extract CFBundleVersion raw -o - \
-  "$app_path/Contents/Info.plist")" = "5"
+  "$app_path/Contents/Info.plist")" = "6"
 test "$(plutil -extract LSUIElement raw -o - "$app_path/Contents/Info.plist")" = "true"
 test "$(plutil -extract CFBundleIconFile raw -o - "$app_path/Contents/Info.plist")" = "AppIcon"
 test -x "$binary_path"

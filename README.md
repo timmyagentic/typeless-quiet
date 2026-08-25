@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml)
 
-一个轻量、原生的 macOS 菜单栏工具，只负责自动关闭 Typeless 中标题为
+一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 中标题为
 `Upgrade for enhanced accuracy` 的付费升级提示。
 
 Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
@@ -54,6 +54,9 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 完成 Apple notarization 与 stapling。公证和 Developer ID 签名不代表真实弹窗 E2E 已
 验证；该项仍需在服务器提示实际出现时完成。
 
+正常打开 App 会显示主窗口；关闭窗口后仍会在菜单栏运行。登录项自动启动时不会主动
+弹出主窗口，再次从 Applications 打开即可随时显示或置前。
+
 ## 构建与验证
 
 ```bash
@@ -103,7 +106,7 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 
 首次启动后：
 
-1. 权限缺失时，Typeless Quiet 会立即显示可见的原生设置引导。
+1. 正常打开时会显示主窗口；权限缺失时优先显示可见的原生设置引导。
 2. 每个 App build 最多自动尝试一次 macOS 官方权限提示；若系统不再重复显示，使用引导
    中的按钮直接打开系统设置。
 3. 在“设备控制和数据访问”（部分 macOS 显示为“辅助功能”）中批准 Typeless Quiet。
@@ -124,7 +127,7 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 
 ## 运行状态与日志
 
-菜单栏会显示等待 Typeless、正在监听、缺少权限、暂停或 fail-closed 原因。
+主窗口和菜单栏都会显示等待 Typeless、正在监听、缺少权限、暂停或 fail-closed 原因。
 系统日志只记录规则结果，不记录输入内容或其他界面文本：
 
 ```bash
