@@ -12,16 +12,40 @@ struct CapturedTooltip {
     let elementsByPath: [AXNodePath: AXUIElement]
 }
 
+// Accessibility descendants form a graph in some Electron apps. Track CF identity so
+// shared or cyclic elements are visited once instead of exhausting traversal limits.
+private struct AXElementIdentitySet {
+    private var buckets: [CFHashCode: [AXUIElement]] = [:]
+
+    mutating func insert(_ element: AXUIElement) -> Bool {
+        let hash = CFHash(element)
+        if buckets[hash, default: []].contains(where: { CFEqual($0, element) }) {
+            return false
+        }
+        buckets[hash, default: []].append(element)
+        return true
+    }
+}
+
 struct AccessibilityElementReader {
     private let maximumApplicationNodes = 2_500
     private let maximumApplicationDepth = 24
     private let maximumCardNodes = 256
     private let maximumCardDepth = 12
 
+    func windowElements(in application: AXUIElement) -> [AXUIElement] {
+        guard let rawValue = attribute("AXWindows", of: application) else {
+            return []
+        }
+        return elementArray(from: rawValue)
+    }
+
     func tooltipElements(in application: AXUIElement) -> Result<[AXUIElement], AXScanFailure> {
         var queue: [(element: AXUIElement, depth: Int)] = [(application, 0)]
         var index = 0
         var tooltips: [AXUIElement] = []
+        var seen = AXElementIdentitySet()
+        _ = seen.insert(application)
 
         while index < queue.count {
             guard index < maximumApplicationNodes else {
@@ -36,9 +60,9 @@ struct AccessibilityElementReader {
             }
 
             if item.depth < maximumApplicationDepth {
-                queue.append(contentsOf: childElements(of: item.element).map {
-                    (element: $0, depth: item.depth + 1)
-                })
+                for child in childElements(of: item.element) where seen.insert(child) {
+                    queue.append((element: child, depth: item.depth + 1))
+                }
             }
         }
 
@@ -48,6 +72,8 @@ struct AccessibilityElementReader {
     func capture(_ tooltip: AXUIElement) -> Result<CapturedTooltip, AXScanFailure> {
         var visited = 0
         var elementsByPath: [AXNodePath: AXUIElement] = [:]
+        var seen = AXElementIdentitySet()
+        _ = seen.insert(tooltip)
 
         do {
             let rootPath = AXNodePath()
@@ -56,6 +82,7 @@ struct AccessibilityElementReader {
                 path: rootPath,
                 depth: 0,
                 visited: &visited,
+                seen: &seen,
                 elementsByPath: &elementsByPath
             )
             return .success(CapturedTooltip(
@@ -72,6 +99,7 @@ struct AccessibilityElementReader {
         path: AXNodePath,
         depth: Int,
         visited: inout Int,
+        seen: inout AXElementIdentitySet,
         elementsByPath: inout [AXNodePath: AXUIElement]
     ) throws -> AXNodeSnapshot {
         guard visited < maximumCardNodes, depth <= maximumCardDepth else {
@@ -81,13 +109,14 @@ struct AccessibilityElementReader {
         visited += 1
         elementsByPath[path] = element
 
-        let children = childElements(of: element)
+        let children = childElements(of: element).filter { seen.insert($0) }
         let childSnapshots = try children.enumerated().map { index, child in
             try captureNode(
                 child,
                 path: path.appending(index),
                 depth: depth + 1,
                 visited: &visited,
+                seen: &seen,
                 elementsByPath: &elementsByPath
             )
         }
@@ -105,12 +134,14 @@ struct AccessibilityElementReader {
     }
 
     private func childElements(of element: AXUIElement) -> [AXUIElement] {
-        guard let rawValue = attribute("AXChildren", of: element),
-              CFGetTypeID(rawValue) == CFArrayGetTypeID()
-        else {
+        guard let rawValue = attribute("AXChildren", of: element) else {
             return []
         }
+        return elementArray(from: rawValue)
+    }
 
+    private func elementArray(from rawValue: CFTypeRef) -> [AXUIElement] {
+        guard CFGetTypeID(rawValue) == CFArrayGetTypeID() else { return [] }
         let array = unsafeBitCast(rawValue, to: CFArray.self)
         return (0 ..< CFArrayGetCount(array)).compactMap { index in
             guard let pointer = CFArrayGetValueAtIndex(array, index) else {

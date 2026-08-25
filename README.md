@@ -16,8 +16,9 @@ Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、�
 Typeless Quiet 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm、
 Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会拦截网络请求。
 
-应用需要常驻，但只在 Typeless 运行时连接其 Accessibility 树。Typeless 未运行时，
-它只等待系统的应用启动通知。
+应用需要常驻，但只在 Typeless 运行时连接其 Accessibility 树。它优先响应窗口和布局的
+Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才降级轮询。Typeless 未
+运行时，它只等待系统的应用启动通知。
 
 ## 安全边界
 

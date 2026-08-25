@@ -13,13 +13,25 @@ private struct DecisionCaptureFailure: Error {
     let message: String
 }
 
+private struct ObservedNotification {
+    let element: AXUIElement
+    let notification: String
+}
+
+private enum ScanTrigger: String {
+    case initial
+    case observer
+    case watchdog
+    case fallback
+}
+
 private let typelessObserverCallback: AXObserverCallback = {
     _, _, notification, refcon in
     guard let refcon else { return }
     let watcher = Unmanaged<TypelessProcessWatcher>
         .fromOpaque(refcon)
         .takeUnretainedValue()
-    watcher.accessibilityNotificationReceived(notification as String)
+    watcher.accessibilityNotificationReceived(notification: notification as String)
 }
 
 final class TypelessProcessWatcher {
@@ -31,11 +43,13 @@ final class TypelessProcessWatcher {
     private let applicationElement: AXUIElement
     private let reader = AccessibilityElementReader()
     private let matcher = TargetPromptMatcher()
+    private let timingPolicy = AXWatcherTimingPolicy()
     private let onEvent: (TypelessWatcherEvent) -> Void
 
     private var observer: AXObserver?
-    private var observedNotifications: [String] = []
+    private var observedNotifications: [ObservedNotification] = []
     private var pollTimer: Timer?
+    private var isStarted = false
     private var scanScheduled = false
     private var isScanning = false
     private var lastDismissalUptime = -Double.infinity
@@ -50,27 +64,40 @@ final class TypelessProcessWatcher {
     }
 
     func start() {
+        guard !isStarted else { return }
+        isStarted = true
         installObserver()
 
-        let timer = Timer(timeInterval: 0.40, repeats: true) { [weak self] _ in
-            self?.scheduleScan()
+        let timing = timingPolicy.timing(
+            observerRegistrationCount: observedNotifications.count
+        )
+        let periodicTrigger: ScanTrigger = observedNotifications.isEmpty
+            ? .fallback
+            : .watchdog
+        let timer = Timer(timeInterval: timing.periodicScanInterval, repeats: true) {
+            [weak self] _ in
+            self?.scheduleScan(trigger: periodicTrigger)
         }
-        timer.tolerance = 0.04
+        timer.tolerance = timing.periodicScanTolerance
         RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
-        scheduleScan()
+        logger.info(
+            "AX observer registrations: \(self.observedNotifications.count, privacy: .public); periodic scan interval: \(timing.periodicScanInterval, privacy: .public)s"
+        )
+        scheduleScan(trigger: .initial)
     }
 
     func stop() {
+        isStarted = false
         pollTimer?.invalidate()
         pollTimer = nil
 
         if let observer {
-            for notification in observedNotifications {
+            for registration in observedNotifications {
                 AXObserverRemoveNotification(
                     observer,
-                    applicationElement,
-                    notification as CFString
+                    registration.element,
+                    registration.notification as CFString
                 )
             }
             CFRunLoopRemoveSource(
@@ -86,9 +113,15 @@ final class TypelessProcessWatcher {
         isScanning = false
     }
 
-    fileprivate func accessibilityNotificationReceived(_ notification: String) {
+    fileprivate func accessibilityNotificationReceived(notification: String) {
         logger.debug("Received AX notification: \(notification, privacy: .public)")
-        scheduleScan()
+        if notification == "AXWindowCreated" || notification == "AXUIElementDestroyed" {
+            refreshObservedWindows()
+        }
+        let timing = timingPolicy.timing(
+            observerRegistrationCount: observedNotifications.count
+        )
+        scheduleScan(trigger: .observer, after: timing.observerDebounceDelay)
     }
 
     private func installObserver() {
@@ -103,21 +136,20 @@ final class TypelessProcessWatcher {
             return
         }
 
-        let refcon = Unmanaged.passUnretained(self).toOpaque()
-        let notifications = ["AXCreated", "AXLayoutChanged", "AXWindowCreated"]
-        for notification in notifications {
-            let addResult = AXObserverAddNotification(
-                newObserver,
-                applicationElement,
-                notification as CFString,
-                refcon
-            )
-            if addResult == .success {
-                observedNotifications.append(notification)
-            }
-        }
-
         observer = newObserver
+        registerNotifications(
+            [
+                "AXCreated",
+                "AXLayoutChanged",
+                "AXWindowCreated",
+                "AXFocusedWindowChanged",
+                "AXApplicationActivated",
+                "AXApplicationShown",
+            ],
+            on: applicationElement,
+            observer: newObserver
+        )
+        refreshObservedWindows()
         CFRunLoopAddSource(
             CFRunLoopGetMain(),
             AXObserverGetRunLoopSource(newObserver),
@@ -125,20 +157,75 @@ final class TypelessProcessWatcher {
         )
     }
 
-    private func scheduleScan() {
-        guard !scanScheduled else { return }
-        scanScheduled = true
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.scanScheduled = false
-            self.scan()
+    private func refreshObservedWindows() {
+        guard let observer else { return }
+        let notifications = [
+            "AXCreated",
+            "AXLayoutChanged",
+            "AXValueChanged",
+            "AXUIElementDestroyed",
+        ]
+        for window in reader.windowElements(in: applicationElement) {
+            registerNotifications(notifications, on: window, observer: observer)
         }
     }
 
-    private func scan() {
+    private func registerNotifications(
+        _ notifications: [String],
+        on element: AXUIElement,
+        observer: AXObserver
+    ) {
+        let refcon = Unmanaged.passUnretained(self).toOpaque()
+        for notification in notifications {
+            guard !isObserving(element: element, notification: notification) else {
+                continue
+            }
+            let result = AXObserverAddNotification(
+                observer,
+                element,
+                notification as CFString,
+                refcon
+            )
+            if result == .success || result == .notificationAlreadyRegistered {
+                observedNotifications.append(ObservedNotification(
+                    element: element,
+                    notification: notification
+                ))
+            }
+        }
+    }
+
+    private func isObserving(element: AXUIElement, notification: String) -> Bool {
+        observedNotifications.contains { registration in
+            registration.notification == notification
+                && CFEqual(registration.element, element)
+        }
+    }
+
+    private func scheduleScan(trigger: ScanTrigger, after delay: TimeInterval = 0) {
+        guard !scanScheduled else { return }
+        scanScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            self.scanScheduled = false
+            guard self.isStarted else { return }
+            self.scan(trigger: trigger)
+        }
+    }
+
+    private func scan(trigger: ScanTrigger) {
         guard !isScanning else { return }
         isScanning = true
-        defer { isScanning = false }
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        defer {
+            isScanning = false
+            let durationMilliseconds = Int(
+                (ProcessInfo.processInfo.systemUptime - startedAt) * 1_000
+            )
+            logger.debug(
+                "AX scan trigger=\(trigger.rawValue, privacy: .public) duration_ms=\(durationMilliseconds, privacy: .public)"
+            )
+        }
 
         let now = ProcessInfo.processInfo.systemUptime
         guard now - lastDismissalUptime >= 1.0 else { return }
