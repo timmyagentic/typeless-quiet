@@ -4,6 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 install_root="${TYPELESS_PLUSPLUS_INSTALL_DIR:-${TYPELESS_QUIET_INSTALL_DIR:-${HOME:?}/Applications}}"
+backup_root="${TYPELESS_PLUSPLUS_BACKUP_DIR:-${HOME:?}/Library/Application Support/Typeless++/Backups}"
 destination="$install_root/Typeless++.app"
 legacy_destination="$install_root/Typeless Quiet.app"
 replace=false
@@ -40,10 +41,11 @@ if [[ -n "$existing_destination" ]]; then
     exit 1
   fi
 
+  mkdir -p "$backup_root"
   if [[ "$existing_destination" == "$legacy_destination" ]]; then
-    backup="$install_root/Typeless Quiet.legacy-backup-$(date +%Y%m%d-%H%M%S).app"
+    backup="$backup_root/Typeless Quiet.legacy-backup-$(date +%Y%m%d-%H%M%S).app-backup"
   else
-    backup="$install_root/Typeless++.backup-$(date +%Y%m%d-%H%M%S).app"
+    backup="$backup_root/Typeless++.backup-$(date +%Y%m%d-%H%M%S).app-backup"
   fi
   mv "$existing_destination" "$backup"
   echo "Previous copy moved to: $backup"

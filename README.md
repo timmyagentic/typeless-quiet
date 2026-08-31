@@ -119,6 +119,10 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 ./scripts/install.sh --replace
 ```
 
+备份默认位于 `~/Library/Application Support/Typeless++/Backups/`，并使用
+`.app-backup` 后缀，避免 macOS 把旧副本识别成可启动 App。恢复时退出当前 App，将目标
+备份改回 `.app` 后再移入 Applications。
+
 首次启动后：
 
 1. 正常打开时会显示主窗口；权限缺失时优先显示可见的原生设置引导。

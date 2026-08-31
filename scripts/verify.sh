@@ -35,6 +35,24 @@ test -x "$binary_path"
 test -f "$app_path/Contents/Resources/AppIcon.icns"
 cmp -s "$repo_root/Resources/AppIcon.icns" "$app_path/Contents/Resources/AppIcon.icns"
 
+migration_root="$(mktemp -d /tmp/typeless-plusplus-migration.XXXXXX)"
+trap 'rm -rf "$migration_root"' EXIT
+migration_install="$migration_root/Applications"
+migration_backups="$migration_root/Backups"
+mkdir -p "$migration_install"
+ditto "$app_path" "$migration_install/Typeless Quiet.app"
+TYPELESS_PLUSPLUS_INSTALL_DIR="$migration_install" \
+TYPELESS_PLUSPLUS_BACKUP_DIR="$migration_backups" \
+TYPELESS_PLUSPLUS_SKIP_OPEN=true \
+  "$repo_root/scripts/install.sh" --replace >/dev/null
+test -d "$migration_install/Typeless++.app"
+test ! -e "$migration_install/Typeless Quiet.app"
+test "$(find "$migration_backups" -maxdepth 1 -type d -name '*.app-backup' | wc -l | tr -d ' ')" = "1"
+if find "$migration_backups" -maxdepth 1 -type d -name '*.app' | grep -q .; then
+  echo "Legacy app backup must not retain an application-discoverable .app suffix" >&2
+  exit 1
+fi
+
 if otool -L "$binary_path" | grep -Eiq 'Hammerspoon|node'; then
   echo "Unexpected third-party runtime dependency found" >&2
   exit 1
