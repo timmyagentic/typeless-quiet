@@ -340,6 +340,12 @@ final class AccountManager: ObservableObject {
         message = "\(context)：\(error.localizedDescription)"
     }
 
+    func replaceDirectoryForMigration(_ candidate: AccountDirectory) throws {
+        try commit(candidate)
+        message = nil
+        performSelfCheck()
+    }
+
     private func quotaDiagnosticDetail(_ quota: QuotaSnapshot?) -> String {
         guard let quota else {
             return "当前界面和白名单本地字段都未暴露额度，显示为未知"
@@ -376,6 +382,9 @@ final class AccountManager: ObservableObject {
             return
         }
         account.quota = quota
+        if account.status == .unknown, quota.isFresh() {
+            account.status = .available
+        }
         account.updatedAt = Date()
         var candidate = directory
         try candidate.update(account)

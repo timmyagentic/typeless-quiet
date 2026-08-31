@@ -114,6 +114,11 @@ private struct MainWindowView: View {
                         switchCoordinator: model.switchCoordinator,
                         controller: model.quotaGuardController
                     )
+                case .migration:
+                    BackupMigrationSection(
+                        manager: accountManager,
+                        controller: model.backupController
+                    )
                 case .diagnostics:
                     AccountDiagnosticsSection(
                         manager: accountManager,

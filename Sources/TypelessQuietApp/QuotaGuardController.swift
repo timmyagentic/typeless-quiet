@@ -195,6 +195,28 @@ final class QuotaGuardController: ObservableObject {
         try setAccountPool(pool)
     }
 
+    func applyMigrationDocument(_ candidate: QuotaGuardDocument) throws {
+        guard candidate.schemaVersion == QuotaGuardDocument.currentSchemaVersion else {
+            throw QuotaGuardStoreError.invalidSchema
+        }
+        var safe = candidate
+        safe.configuration.isEnabled = false
+        safe.runtime = QuotaGuardRuntime()
+        try commit(safe)
+        lastDecision = .noAction(.disabled)
+        lastSwitchOutcome = nil
+        configurationError = nil
+        updateTimer()
+    }
+
+    func restoreDocumentAfterMigrationFailure(_ candidate: QuotaGuardDocument) throws {
+        guard candidate.schemaVersion == QuotaGuardDocument.currentSchemaVersion else {
+            throw QuotaGuardStoreError.invalidSchema
+        }
+        try commit(candidate)
+        updateTimer()
+    }
+
     func evaluateNow() {
         guard storageError == nil else { return }
         let checkedAt = now()
