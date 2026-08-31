@@ -8,15 +8,23 @@ swift test --package-path "$repo_root"
 swift build \
   --package-path "$repo_root" \
   --configuration release \
-  --product TypelessQuiet
+  --product TypelessPlusPlus
 
 app_path="$("$repo_root/scripts/build-app.sh" | tail -n 1)"
-binary_path="$app_path/Contents/MacOS/TypelessQuiet"
+binary_path="$app_path/Contents/MacOS/TypelessPlusPlus"
 
+test "$(basename "$app_path")" = "Typeless++.app"
 plutil -lint "$app_path/Contents/Info.plist"
 codesign --verify --deep --strict --verbose=2 "$app_path"
+# The legacy identifier intentionally preserves Accessibility, preferences, and login items.
 test "$(plutil -extract CFBundleIdentifier raw -o - "$app_path/Contents/Info.plist")" = \
   "io.github.timmyagentic.TypelessQuiet"
+test "$(plutil -extract CFBundleDisplayName raw -o - \
+  "$app_path/Contents/Info.plist")" = "Typeless++"
+test "$(plutil -extract CFBundleName raw -o - \
+  "$app_path/Contents/Info.plist")" = "Typeless++"
+test "$(plutil -extract CFBundleExecutable raw -o - \
+  "$app_path/Contents/Info.plist")" = "TypelessPlusPlus"
 test "$(plutil -extract CFBundleShortVersionString raw -o - \
   "$app_path/Contents/Info.plist")" = "0.1.5"
 test "$(plutil -extract CFBundleVersion raw -o - \

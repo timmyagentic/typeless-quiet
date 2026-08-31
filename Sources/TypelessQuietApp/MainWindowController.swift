@@ -68,11 +68,12 @@ final class MainWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Typeless Quiet"
+        window.title = "Typeless++"
         window.identifier = NSUserInterfaceItemIdentifier("MainWindow")
         window.contentViewController = hostingController
         window.isReleasedWhenClosed = false
         window.isMovableByWindowBackground = true
+        // Keep the legacy autosave key so existing users retain their window placement.
         window.setFrameAutosaveName("TypelessQuietMainWindow")
         window.center()
         return window
@@ -132,7 +133,7 @@ private struct MainWindowView: View {
                 Divider()
 
                 HStack {
-                    Text("关闭窗口后，Typeless Quiet 仍会在菜单栏运行。")
+                    Text("关闭窗口后，Typeless++ 仍会在菜单栏运行。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -159,7 +160,7 @@ private struct MainWindowView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Typeless Quiet")
+                Text("Typeless++")
                     .font(.system(size: 24, weight: .semibold))
 
                 Label(snapshot.statusText, systemImage: snapshot.statusSymbol)

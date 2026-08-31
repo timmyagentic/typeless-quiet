@@ -3,13 +3,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "TypelessQuiet",
+    name: "TypelessPlusPlus",
     platforms: [
         .macOS(.v13),
     ],
     products: [
-        .library(name: "TypelessQuietCore", targets: ["TypelessQuietCore"]),
-        .executable(name: "TypelessQuiet", targets: ["TypelessQuietApp"]),
+        .library(name: "TypelessPlusPlusCore", targets: ["TypelessQuietCore"]),
+        .executable(name: "TypelessPlusPlus", targets: ["TypelessQuietApp"]),
     ],
     targets: [
         .target(name: "TypelessQuietCore"),

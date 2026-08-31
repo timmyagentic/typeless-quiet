@@ -15,6 +15,7 @@ final class QuietModel: ObservableObject {
     @Published private(set) var issueText: String?
 
     private let defaults = UserDefaults.standard
+    // Preserve legacy defaults keys across the Typeless++ rename.
     private let enabledDefaultsKey = "TypelessQuietEnabled"
     private let accessibilityPromptedBuildKey = "InitialSetup.AccessibilityPromptedBuild.v2"
     private let launchAtLoginInitializedKey = "InitialSetup.LaunchAtLogin.v1"
