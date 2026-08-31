@@ -4,6 +4,7 @@ import TypelessQuietCore
 enum MainWindowSection: String, CaseIterable, Identifiable {
     case overview = "概览"
     case accounts = "账号"
+    case quotaGuard = "守护"
     case diagnostics = "诊断"
 
     var id: String { rawValue }

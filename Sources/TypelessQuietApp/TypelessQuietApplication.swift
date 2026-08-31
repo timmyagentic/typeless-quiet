@@ -26,6 +26,8 @@ struct TypelessQuietApplication: App {
                 Text(operation.menuSummary(accounts: model.accountManager.accounts))
             }
 
+            Text(model.quotaGuardController.menuSummary)
+
             if let lastDismissal = model.lastDismissal {
                 Text("上次关闭：\(lastDismissal.formatted(date: .abbreviated, time: .standard))")
             }
@@ -57,6 +59,20 @@ struct TypelessQuietApplication: App {
             if model.switchCoordinator.isBusy {
                 Button("取消切换并恢复") {
                     model.switchCoordinator.cancelAndRestore()
+                }
+            }
+
+            Toggle(
+                "低额度守护",
+                isOn: Binding(
+                    get: { model.quotaGuardController.configuration.isEnabled },
+                    set: { try? model.quotaGuardController.setEnabled($0) }
+                )
+            )
+
+            if model.quotaGuardController.configuration.isEnabled {
+                Button("立即检查低额度") {
+                    model.quotaGuardController.evaluateNow()
                 }
             }
 

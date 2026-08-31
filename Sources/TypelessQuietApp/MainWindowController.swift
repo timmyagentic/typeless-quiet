@@ -108,6 +108,12 @@ private struct MainWindowView: View {
                         manager: accountManager,
                         switchCoordinator: model.switchCoordinator
                     )
+                case .quotaGuard:
+                    QuotaGuardSection(
+                        manager: accountManager,
+                        switchCoordinator: model.switchCoordinator,
+                        controller: model.quotaGuardController
+                    )
                 case .diagnostics:
                     AccountDiagnosticsSection(
                         manager: accountManager,

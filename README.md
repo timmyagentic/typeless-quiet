@@ -8,7 +8,7 @@
 `Get unlimited words` / `获取无限字数` 文案。
 
 `Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。账号与额度基础层、
-基于官方登录的安全切换已经进入当前源码；低额度守护和迁移能力按
+基于官方登录的安全切换和可选低额度守护已经进入当前源码；迁移能力按
 [产品路线图](docs/ROADMAP.md) 继续实现。
 
 Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
@@ -16,6 +16,8 @@ Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授�
 ## 界面预览
 
 ![Typeless++ 主窗口](docs/assets/typeless-plusplus-main-window.png)
+
+![Typeless++ 低额度守护](docs/assets/typeless-plusplus-quota-guard.png)
 
 ![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
 
@@ -82,6 +84,25 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 切换事件写入 `~/Library/Application Support/Typeless++/switch-audit.json`：只含 transaction/
 账号 UUID、阶段、时间、结果和固定错误码，不含邮箱、URL、密码、token、Cookie 或设备身份。
 最近记录可以在“诊断”页查看。保存账号秘密本身不会让 Typeless 自动登录。
+
+## 可选低额度守护
+
+“守护”页提供一个默认关闭的低额度检查器。用户必须显式配置并启用：
+
+- 剩余字数阈值。
+- 至少两个账号组成的有序账号池；当前账号之后的首个合格账号是唯一目标。
+- 基础冷却时间；失败后按 2 倍指数退避，上限 24 小时，成功后清零。
+
+只有启用时才创建 60 秒低频 Timer，也可以手动“立即检查”。每轮最多触发一次 P2 安全切换，
+并继续使用相同的官方登录、目标验证和原账号恢复；它没有第二条静默切换路径。触发后可能
+打开 Typeless 官方登录页，需要用户在官网选择账号。
+
+以下任一情况都会 no-op：当前额度不低、Typeless 未运行、正在录音/处理、活动未知、已有切换、
+冷却中、池 ID 重复/缺失、当前账号不在池，或当前/候选账号的额度快照超过 5 分钟。严格的
+候选新鲜度意味着后台不会凭很久以前的余额猜测可用账号。
+
+配置与冷却状态写入 `~/Library/Application Support/Typeless++/quota-guard.json`，使用 schema
+v1、0700/0600 权限，不含邮箱、密码、token、Cookie 或设备身份。
 
 ## 系统要求
 

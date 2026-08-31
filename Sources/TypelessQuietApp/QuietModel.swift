@@ -8,6 +8,7 @@ import TypelessQuietCore
 final class QuietModel: ObservableObject {
     let accountManager: AccountManager
     let switchCoordinator: SwitchCoordinator
+    let quotaGuardController: QuotaGuardController
     @Published private(set) var isEnabled: Bool
     @Published private(set) var accessibilityGranted = false
     @Published private(set) var typelessRunning = false
@@ -25,6 +26,7 @@ final class QuietModel: ObservableObject {
     private var permissionTimer: Timer?
     private var accountUpdates: AnyCancellable?
     private var switchUpdates: AnyCancellable?
+    private var quotaGuardUpdates: AnyCancellable?
 
     private lazy var mainWindow = MainWindowController(model: self)
 
@@ -40,13 +42,20 @@ final class QuietModel: ObservableObject {
 
     init(
         accountManager: AccountManager? = nil,
-        switchCoordinator: SwitchCoordinator? = nil
+        switchCoordinator: SwitchCoordinator? = nil,
+        quotaGuardController: QuotaGuardController? = nil
     ) {
         let resolvedAccountManager = accountManager ?? AccountManager()
         let resolvedSwitchCoordinator = switchCoordinator
             ?? SwitchCoordinator(accountManager: resolvedAccountManager)
+        let resolvedQuotaGuardController = quotaGuardController
+            ?? QuotaGuardController(
+                accountManager: resolvedAccountManager,
+                switchCoordinator: resolvedSwitchCoordinator
+            )
         self.accountManager = resolvedAccountManager
         self.switchCoordinator = resolvedSwitchCoordinator
+        self.quotaGuardController = resolvedQuotaGuardController
         if defaults.object(forKey: enabledDefaultsKey) == nil {
             isEnabled = true
         } else {
@@ -71,6 +80,9 @@ final class QuietModel: ObservableObject {
             self?.objectWillChange.send()
         }
         switchUpdates = resolvedSwitchCoordinator.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        quotaGuardUpdates = resolvedQuotaGuardController.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }
