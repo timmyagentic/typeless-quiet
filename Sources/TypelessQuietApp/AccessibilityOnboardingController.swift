@@ -37,7 +37,7 @@ final class AccessibilityOnboardingController {
             backing: .buffered,
             defer: false
         )
-        window.title = "完成 Typeless Quiet 设置"
+        window.title = "完成 Typeless++ 设置"
         window.identifier = NSUserInterfaceItemIdentifier("AccessibilityOnboarding")
         window.contentViewController = NSHostingController(rootView: contentView)
         window.isReleasedWhenClosed = false
@@ -60,11 +60,11 @@ private struct AccessibilityOnboardingView: View {
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
-                Text("允许 Typeless Quiet 控制 Typeless")
+                Text("允许 Typeless++ 控制 Typeless")
                     .font(.system(size: 22, weight: .semibold))
                     .multilineTextAlignment(.center)
 
-                Text("请在系统设置中开启 Typeless Quiet 的“设备控制和数据访问”权限。部分 macOS 版本会将它显示为“辅助功能”。")
+                Text("请在系统设置中开启 Typeless++ 的“设备控制和数据访问”权限。部分 macOS 版本会将它显示为“辅助功能”。")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

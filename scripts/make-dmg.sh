@@ -7,7 +7,7 @@ app_path="${1:-}"
 output_path="${2:-}"
 
 if [[ -z "$app_path" || -z "$output_path" ]]; then
-  echo "Usage: $0 path/to/Typeless\ Quiet.app path/to/output.dmg" >&2
+  echo "Usage: $0 path/to/Typeless++.app path/to/output.dmg" >&2
   exit 2
 fi
 if [[ ! -d "$app_path" ]]; then
@@ -21,8 +21,8 @@ if [[ ! -f "$background" ]]; then
   exit 1
 fi
 
-volume_name="Typeless Quiet"
-temp_root="$(mktemp -d /tmp/typeless-quiet-dmg.XXXXXX)"
+volume_name="Typeless++"
+temp_root="$(mktemp -d /tmp/typeless-plusplus-dmg.XXXXXX)"
 staging="$temp_root/staging"
 mount_point="/Volumes/$volume_name"
 read_write_dmg="$temp_root/layout-rw.dmg"
@@ -42,7 +42,7 @@ if mount | grep -Fq "on $mount_point "; then
 fi
 
 mkdir -p "$staging/.background" "$(dirname "$output_path")"
-ditto "$app_path" "$staging/Typeless Quiet.app"
+ditto "$app_path" "$staging/Typeless++.app"
 ln -s /Applications "$staging/Applications"
 cp "$background" "$staging/.background/background.png"
 
@@ -68,7 +68,7 @@ mounted=true
 osascript <<'APPLESCRIPT'
 with timeout of 30 seconds
   tell application "Finder"
-    tell disk "Typeless Quiet"
+    tell disk "Typeless++"
       open
       set current view of container window to icon view
       set toolbar visible of container window to false
@@ -82,7 +82,7 @@ with timeout of 30 seconds
       set text size of viewOptions to 12
       set background picture of viewOptions to file ".background:background.png"
 
-      set position of item "Typeless Quiet.app" of container window to {165, 225}
+      set position of item "Typeless++.app" of container window to {165, 225}
       set position of item "Applications" of container window to {495, 225}
 
       update without registering applications

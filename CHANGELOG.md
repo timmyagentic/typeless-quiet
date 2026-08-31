@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+- 产品更名为 `Typeless++`，源码仓库迁移为 `timmyagentic/typeless-plusplus`；Swift package/product、App/DMG 本地产物、主窗口、菜单、权限引导与文档统一使用新品牌。
+- 保留旧 Bundle ID `io.github.timmyagentic.TypelessQuiet`、UserDefaults keys 和窗口状态 key，避免已安装用户重新授权或丢失设置。
+- 增加账号管理与安全切换路线图；本阶段不实现账号切换、自动注册、设备身份重置或 token 注入。
+- 适配 Typeless 2.4.0 的 “Get unlimited words” / “获取无限字数” 升级提示及对应完整描述，同时保留旧版 “Upgrade for enhanced accuracy”。
+- 支持 Tooltip、Dialog、Popover、Sheet 和 Electron Application Dialog 容器映射。
+- 优先识别 `AXCloseButton` / `AXCancelButton`、Close/Dismiss/关闭语义与明确的 AX/DOM identifier；兼容 32–44pt 现代图标按钮，并保留旧版无名称 14–20pt 按钮。
+- 将 2.4.0 左下角常驻订阅卡片和普通 Upgrade/升级按钮固定为负例，继续要求唯一目标、唯一关闭按钮和动作前复验。
+
 ## [0.1.5] - 2026-08-25
 
 - 增加简洁原生主窗口：显示运行状态、自动关闭开关、权限状态、登录启动和最近关闭时间。

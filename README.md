@@ -1,19 +1,30 @@
-# Typeless Quiet
+# Typeless++
 
-[![CI](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml)
+[![CI](https://github.com/timmyagentic/typeless-plusplus/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-plusplus/actions/workflows/ci.yml)
 
-一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 中标题为
-`Upgrade for enhanced accuracy` 的付费升级提示。
+一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 的瞬时
+付费升级提示。当前源码兼容旧版 `Upgrade for enhanced accuracy`，以及 Typeless 2.4.0
+的 `Get unlimited words` / `获取无限字数` 文案。
 
-Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
+`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。后续账号管理与安全
+切换能力见 [产品路线图](docs/ROADMAP.md)；当前源码尚未实现账号切换。
 
-> `v0.1.5` 提供 macOS 13+ Apple Silicon arm64 下载。App 已使用 Developer ID 签名、
+Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
+
+## 界面预览
+
+![Typeless++ 主窗口](docs/assets/typeless-plusplus-main-window.png)
+
+![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
+
+> 最近公开版本 `v0.1.5` 仍使用旧品牌 Typeless Quiet，提供 macOS 13+ Apple Silicon
+> arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
 
 ## 为什么不是 Hammerspoon
 
-Typeless Quiet 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm、
+Typeless++ 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm、
 Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会拦截网络请求。
 
 应用需要常驻，但只在 Typeless 运行时连接其 Accessibility 树。它优先响应窗口和布局的
@@ -25,15 +36,18 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 规则必须同时满足以下条件才会执行 `AXPress`：
 
 1. 目标进程 Bundle ID 精确等于 `now.typeless.desktop`。
-2. 容器角色精确等于 `AXUserInterfaceTooltip`。
-3. 容器或后代文本精确等于 `Upgrade for enhanced accuracy`。
+2. 容器必须是 Tooltip、Dialog、Popover、Sheet 或 Electron 映射出的 Application Dialog。
+3. 容器或后代文本必须精确等于已知的新旧英文、简体中文或繁体中文目标文案；不做模糊匹配。
 4. 关闭候选是目标卡片的后代 `AXButton`。
-5. 候选没有 Accessibility 名称，尺寸在 14–20 pt 之间，位于卡片内部右上角。
+5. 候选必须带 `AXCloseButton` / `AXCancelButton`、Close/Dismiss/关闭语义或明确的
+   close/dismiss identifier；旧版无名称 14–20 pt 按钮仅作为兼容分支。所有候选都必须
+   位于卡片内部右上角。
 6. 候选支持 `AXPress`，并且全卡片中恰好只有一个候选。
 7. 执行动作前重新抓取一次 AX 树，结果必须与首次判断完全一致。
 
 任一条件不满足、遍历超过上限、出现多个目标卡片或多个按钮时，应用都会停止本次操作。
-它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。
+它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。Typeless 2.4.0 左下角常驻的
+“获取无限字数 / 升级”订阅卡片不是瞬时容器、也没有关闭动作，因此不会被匹配或点击。
 
 ## 系统要求
 
@@ -41,34 +55,35 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
 
-## 下载 v0.1.5
+## 最近公开版本（旧品牌 v0.1.5）
 
-- [Typeless Quiet v0.1.5 Release](https://github.com/timmyagentic/typeless-quiet/releases/tag/v0.1.5)
+- [Typeless Quiet v0.1.5 Release](https://github.com/timmyagentic/typeless-plusplus/releases/tag/v0.1.5)
 - 平台：macOS 13+，Apple Silicon arm64
 - 推荐资产：`Typeless-Quiet-0.1.5-macos-arm64.dmg`
 - 备用资产：`Typeless-Quiet-0.1.5-macos-arm64.zip`
 - 校验：两种格式均提供 `.sha256` 文件
 
-打开 DMG 后，先将 Typeless Quiet 拖入 Applications，再从 Applications 打开它。App
+该历史 DMG 内的 App 名称仍是 Typeless Quiet。打开后先将它拖入 Applications，再从
+Applications 打开。App
 会在权限缺失时显示可见的原生授权引导，并提供直达系统设置的按钮。App 与 DMG 都已
 完成 Apple notarization 与 stapling。公证和 Developer ID 签名不代表真实弹窗 E2E 已
 验证；该项仍需在服务器提示实际出现时完成。
 
-正常打开 App 会显示主窗口；关闭窗口后仍会在菜单栏运行。登录项自动启动时不会主动
-弹出主窗口，再次从 Applications 打开即可随时显示或置前。
+当前源码构建产物名为 `Typeless++.app`。正常打开会显示主窗口；关闭窗口后仍会在菜单栏
+运行。登录项自动启动时不会主动弹出主窗口，再次从 Applications 打开即可显示或置前。
 
 ## 构建与验证
 
 ```bash
-git clone https://github.com/timmyagentic/typeless-quiet.git
-cd typeless-quiet
+git clone https://github.com/timmyagentic/typeless-plusplus.git
+cd typeless-plusplus
 make verify
 ```
 
 验证通过后，应用位于：
 
 ```text
-dist/Typeless Quiet.app
+dist/Typeless++.app
 ```
 
 重新生成 App 图标和 DMG 背景、制作本地测试 DMG：
@@ -104,12 +119,16 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 ./scripts/install.sh --replace
 ```
 
+备份默认位于 `~/Library/Application Support/Typeless++/Backups/`，并使用
+`.app-backup` 后缀，避免 macOS 把旧副本识别成可启动 App。恢复时退出当前 App，将目标
+备份改回 `.app` 后再移入 Applications。
+
 首次启动后：
 
 1. 正常打开时会显示主窗口；权限缺失时优先显示可见的原生设置引导。
 2. 每个 App build 最多自动尝试一次 macOS 官方权限提示；若系统不再重复显示，使用引导
    中的按钮直接打开系统设置。
-3. 在“设备控制和数据访问”（部分 macOS 显示为“辅助功能”）中批准 Typeless Quiet。
+3. 在“设备控制和数据访问”（部分 macOS 显示为“辅助功能”）中批准 Typeless++。
 4. 应用会默认注册“登录时启动”；若系统要求额外批准，菜单会显示对应状态。
 5. 你随时可以从菜单关闭登录启动，应用不会在下次启动时重新强制开启。
 
@@ -120,8 +139,9 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 ## 卸载
 
 1. 在菜单中关闭“登录时启动”。
-2. 退出 Typeless Quiet。
-3. 将 `~/Applications/Typeless Quiet.app` 移到废纸篓。
+2. 退出 Typeless++。
+3. 将 `~/Applications/Typeless++.app` 移到废纸篓；从旧版升级的用户也可检查旧路径
+   `~/Applications/Typeless Quiet.app`。
 4. 如需清理授权，在“系统设置 → 隐私与安全性 → 设备控制和数据访问”（部分 macOS
    显示为“辅助功能”）移除它。
 
@@ -133,6 +153,9 @@ CODE_SIGN_IDENTITY='Developer ID Application: …' make verify
 ```bash
 log stream --predicate 'subsystem == "io.github.timmyagentic.TypelessQuiet"'
 ```
+
+为保持既有辅助功能授权、偏好与登录项，Typeless++ 暂时沿用旧 Bundle ID
+`io.github.timmyagentic.TypelessQuiet`；这是有意的升级兼容约束。
 
 ## 当前验证限制
 

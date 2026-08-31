@@ -5,9 +5,9 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleDisplayName</key>
-    <string>Typeless Quiet</string>
+    <string>Typeless++</string>
     <key>CFBundleExecutable</key>
-    <string>TypelessQuiet</string>
+    <string>TypelessPlusPlus</string>
     <key>CFBundleIdentifier</key>
     <string>io.github.timmyagentic.TypelessQuiet</string>
     <key>CFBundleIconFile</key>
@@ -15,7 +15,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Typeless Quiet</string>
+    <string>Typeless++</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

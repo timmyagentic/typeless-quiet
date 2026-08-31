@@ -7,7 +7,7 @@ enum AXScanFailure: Error, Equatable {
     case cardTraversalLimitExceeded
 }
 
-struct CapturedTooltip {
+struct CapturedCard {
     let snapshot: AXNodeSnapshot
     let elementsByPath: [AXNodePath: AXUIElement]
 }
@@ -40,10 +40,10 @@ struct AccessibilityElementReader {
         return elementArray(from: rawValue)
     }
 
-    func tooltipElements(in application: AXUIElement) -> Result<[AXUIElement], AXScanFailure> {
+    func targetCardElements(in application: AXUIElement) -> Result<[AXUIElement], AXScanFailure> {
         var queue: [(element: AXUIElement, depth: Int)] = [(application, 0)]
         var index = 0
-        var tooltips: [AXUIElement] = []
+        var cards: [AXUIElement] = []
         var seen = AXElementIdentitySet()
         _ = seen.insert(application)
 
@@ -55,8 +55,11 @@ struct AccessibilityElementReader {
             let item = queue[index]
             index += 1
 
-            if stringAttribute("AXRole", of: item.element) == TargetPromptMatcher.targetCardRole {
-                tooltips.append(item.element)
+            if TargetPromptMatcher.isTargetCardContainer(
+                role: stringAttribute("AXRole", of: item.element),
+                subrole: stringAttribute("AXSubrole", of: item.element)
+            ) {
+                cards.append(item.element)
             }
 
             if item.depth < maximumApplicationDepth {
@@ -66,26 +69,26 @@ struct AccessibilityElementReader {
             }
         }
 
-        return .success(tooltips)
+        return .success(cards)
     }
 
-    func capture(_ tooltip: AXUIElement) -> Result<CapturedTooltip, AXScanFailure> {
+    func capture(_ card: AXUIElement) -> Result<CapturedCard, AXScanFailure> {
         var visited = 0
         var elementsByPath: [AXNodePath: AXUIElement] = [:]
         var seen = AXElementIdentitySet()
-        _ = seen.insert(tooltip)
+        _ = seen.insert(card)
 
         do {
             let rootPath = AXNodePath()
             let snapshot = try captureNode(
-                tooltip,
+                card,
                 path: rootPath,
                 depth: 0,
                 visited: &visited,
                 seen: &seen,
                 elementsByPath: &elementsByPath
             )
-            return .success(CapturedTooltip(
+            return .success(CapturedCard(
                 snapshot: snapshot,
                 elementsByPath: elementsByPath
             ))
@@ -123,10 +126,14 @@ struct AccessibilityElementReader {
 
         return AXNodeSnapshot(
             role: stringAttribute("AXRole", of: element),
+            subrole: stringAttribute("AXSubrole", of: element),
             title: stringAttribute("AXTitle", of: element),
             value: stringAttribute("AXValue", of: element),
             elementDescription: stringAttribute("AXDescription", of: element),
             help: stringAttribute("AXHelp", of: element),
+            identifier: stringAttribute("AXIdentifier", of: element),
+            domIdentifier: stringAttribute("AXDOMIdentifier", of: element),
+            domClassList: stringSetAttribute("AXDOMClassList", of: element),
             frame: frame(of: element),
             actions: actionNames(of: element),
             children: childSnapshots
@@ -162,6 +169,26 @@ struct AccessibilityElementReader {
             return nil
         }
         return unsafeBitCast(rawValue, to: CFString.self) as String
+    }
+
+    private func stringSetAttribute(_ name: String, of element: AXUIElement) -> Set<String> {
+        guard let rawValue = attribute(name, of: element),
+              CFGetTypeID(rawValue) == CFArrayGetTypeID()
+        else {
+            return []
+        }
+
+        let array = unsafeBitCast(rawValue, to: CFArray.self)
+        return Set((0 ..< CFArrayGetCount(array)).compactMap { index in
+            guard let pointer = CFArrayGetValueAtIndex(array, index) else {
+                return nil
+            }
+            let value = unsafeBitCast(pointer, to: CFTypeRef.self)
+            guard CFGetTypeID(value) == CFStringGetTypeID() else {
+                return nil
+            }
+            return unsafeBitCast(value, to: CFString.self) as String
+        })
     }
 
     private func frame(of element: AXUIElement) -> AXFrame? {

@@ -26,7 +26,7 @@ func bitmapContext(width: Int, height: Int) throws -> CGContext {
         space: CGColorSpaceCreateDeviceRGB(),
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     ) else {
-        throw NSError(domain: "TypelessQuietAssets", code: 1)
+        throw NSError(domain: "TypelessPlusPlusAssets", code: 1)
     }
     return context
 }
@@ -34,7 +34,7 @@ func bitmapContext(width: Int, height: Int) throws -> CGContext {
 func writePNG(_ image: CGImage, to url: URL) throws {
     let representation = NSBitmapImageRep(cgImage: image)
     guard let data = representation.representation(using: .png, properties: [:]) else {
-        throw NSError(domain: "TypelessQuietAssets", code: 2)
+        throw NSError(domain: "TypelessPlusPlusAssets", code: 2)
     }
     try data.write(to: url)
 }
@@ -140,7 +140,7 @@ func makeAppIcon() throws -> CGImage {
     context.strokePath()
 
     guard let image = context.makeImage() else {
-        throw NSError(domain: "TypelessQuietAssets", code: 3)
+        throw NSError(domain: "TypelessPlusPlusAssets", code: 3)
     }
     return image
 }
@@ -153,7 +153,7 @@ func resizedImage(_ image: CGImage, side: Int) throws -> CGImage {
         in: CGRect(x: 0, y: 0, width: CGFloat(side), height: CGFloat(side))
     )
     guard let resized = context.makeImage() else {
-        throw NSError(domain: "TypelessQuietAssets", code: 4)
+        throw NSError(domain: "TypelessPlusPlusAssets", code: 4)
     }
     return resized
 }
@@ -186,7 +186,7 @@ func makeDMGBackground() throws -> CGImage {
     context.stroke(CGRect(x: 1, y: 1, width: canvasWidth - 2, height: canvasHeight - 2))
 
     drawCenteredText(
-        "Install Typeless Quiet",
+        "Install Typeless++",
         font: .systemFont(ofSize: 24, weight: .semibold),
         color: NSColor(white: 0.14, alpha: 1),
         baselineY: 356,
@@ -194,7 +194,7 @@ func makeDMGBackground() throws -> CGImage {
         context: context
     )
     drawCenteredText(
-        "1. Drag Typeless Quiet into Applications",
+        "1. Drag Typeless++ into Applications",
         font: .systemFont(ofSize: 14, weight: .regular),
         color: NSColor(white: 0.39, alpha: 1),
         baselineY: 330,
@@ -229,7 +229,7 @@ func makeDMGBackground() throws -> CGImage {
     context.fillPath()
 
     guard let image = context.makeImage() else {
-        throw NSError(domain: "TypelessQuietAssets", code: 5)
+        throw NSError(domain: "TypelessPlusPlusAssets", code: 5)
     }
     return image
 }
@@ -270,7 +270,7 @@ iconutil.arguments = [
 try iconutil.run()
 iconutil.waitUntilExit()
 guard iconutil.terminationStatus == 0 else {
-    throw NSError(domain: "TypelessQuietAssets", code: 6)
+    throw NSError(domain: "TypelessPlusPlusAssets", code: 6)
 }
 try FileManager.default.removeItem(at: iconset)
 

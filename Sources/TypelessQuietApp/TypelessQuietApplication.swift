@@ -28,7 +28,7 @@ struct TypelessQuietApplication: App {
 
             Divider()
 
-            Button("打开 Typeless Quiet") {
+            Button("打开 Typeless++") {
                 model.showPrimaryInterface()
             }
 
@@ -71,11 +71,11 @@ struct TypelessQuietApplication: App {
 
             Divider()
 
-            Button("退出 Typeless Quiet") {
+            Button("退出 Typeless++") {
                 model.quit()
             }
         } label: {
-            Label("Typeless Quiet", systemImage: model.statusSymbol)
+            Label("Typeless++", systemImage: model.statusSymbol)
         }
         .menuBarExtraStyle(.menu)
     }
