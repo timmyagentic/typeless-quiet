@@ -319,6 +319,12 @@ final class AccountManager: ObservableObject {
                 detail: quotaDiagnosticDetail(result.state.quota),
                 level: quotaDiagnosticLevel(result.state.quota)
             ))
+            items.append(AccountDiagnosticItem(
+                id: "activity",
+                title: "切换安全状态",
+                detail: activityDiagnosticDetail(result.state.activity),
+                level: result.state.activity == .idle ? .success : .warning
+            ))
         } else {
             items.append(AccountDiagnosticItem(
                 id: "typeless-storage",
@@ -351,6 +357,15 @@ final class AccountManager: ObservableObject {
     private func quotaDiagnosticLevel(_ quota: QuotaSnapshot?) -> AccountDiagnosticLevel {
         guard let quota else { return .warning }
         return quota.isFresh() ? .success : .warning
+    }
+
+    private func activityDiagnosticDetail(_ activity: TypelessActivityState) -> String {
+        switch activity {
+        case .idle: "已读取到明确的空闲控件，可执行切换 preflight"
+        case .recording: "Typeless 正在录音，禁止切换"
+        case .processing: "Typeless 正在处理转录，禁止切换"
+        case .unknown: "无法证明 Typeless 空闲，切换将 fail closed"
+        }
     }
 
     private func updateManagedQuota(from state: CurrentTypelessState) throws {

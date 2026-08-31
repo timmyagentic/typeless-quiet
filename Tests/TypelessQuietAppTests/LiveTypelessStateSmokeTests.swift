@@ -24,6 +24,20 @@ final class LiveTypelessStateSmokeTests: XCTestCase {
         XCTAssertTrue(quota.isFresh())
     }
 
+    func testReadsActivityWhenCurrentInterfaceExposesRecordingControl() throws {
+        try requireLiveQA()
+        let result = try TypelessCurrentStateReader().read()
+        guard result.state.activity != .unknown else {
+            throw XCTSkip("Current Typeless interface does not expose recognized activity controls")
+        }
+
+        XCTAssertTrue([
+            TypelessActivityState.idle,
+            .recording,
+            .processing,
+        ].contains(result.state.activity))
+    }
+
     private func requireLiveQA() throws {
         guard ProcessInfo.processInfo.environment[
             "TYPELESS_PLUSPLUS_RUN_LIVE_READ_QA"

@@ -1,0 +1,27 @@
+{
+  "accounts" : [
+    {
+      "autoSwitchEligible" : false,
+      "createdAt" : 0,
+      "displayName" : "QA Current",
+      "email" : "qa.current@example.test",
+      "hasSecret" : false,
+      "id" : "11111111-1111-4111-8111-111111111111",
+      "note" : "Current fixture account",
+      "status" : "available",
+      "updatedAt" : 0
+    },
+    {
+      "autoSwitchEligible" : false,
+      "createdAt" : 0,
+      "displayName" : "QA Target",
+      "email" : "qa.target@example.test",
+      "hasSecret" : false,
+      "id" : "22222222-2222-4222-8222-222222222222",
+      "note" : "Target fixture account",
+      "status" : "available",
+      "updatedAt" : 0
+    }
+  ],
+  "schemaVersion" : 1
+}

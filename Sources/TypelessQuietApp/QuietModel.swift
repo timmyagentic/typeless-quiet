@@ -7,6 +7,7 @@ import TypelessQuietCore
 @MainActor
 final class QuietModel: ObservableObject {
     let accountManager: AccountManager
+    let switchCoordinator: SwitchCoordinator
     @Published private(set) var isEnabled: Bool
     @Published private(set) var accessibilityGranted = false
     @Published private(set) var typelessRunning = false
@@ -23,6 +24,7 @@ final class QuietModel: ObservableObject {
     private let initialSetupPolicy = InitialSetupPolicy()
     private var permissionTimer: Timer?
     private var accountUpdates: AnyCancellable?
+    private var switchUpdates: AnyCancellable?
 
     private lazy var mainWindow = MainWindowController(model: self)
 
@@ -36,9 +38,15 @@ final class QuietModel: ObservableObject {
         self?.handleMonitorEvent(event)
     }
 
-    init(accountManager: AccountManager? = nil) {
+    init(
+        accountManager: AccountManager? = nil,
+        switchCoordinator: SwitchCoordinator? = nil
+    ) {
         let resolvedAccountManager = accountManager ?? AccountManager()
+        let resolvedSwitchCoordinator = switchCoordinator
+            ?? SwitchCoordinator(accountManager: resolvedAccountManager)
         self.accountManager = resolvedAccountManager
+        self.switchCoordinator = resolvedSwitchCoordinator
         if defaults.object(forKey: enabledDefaultsKey) == nil {
             isEnabled = true
         } else {
@@ -60,6 +68,9 @@ final class QuietModel: ObservableObject {
         RunLoop.main.add(timer, forMode: .common)
         permissionTimer = timer
         accountUpdates = resolvedAccountManager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        switchUpdates = resolvedSwitchCoordinator.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }

@@ -7,9 +7,9 @@
 `Upgrade for enhanced accuracy`，以及 Typeless 2.4.0 的
 `Get unlimited words` / `获取无限字数` 文案。
 
-`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。账号与额度基础层
-已经进入当前源码；安全切换、低额度守护和迁移能力按
-[产品路线图](docs/ROADMAP.md) 继续实现。当前源码尚未执行账号切换。
+`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。账号与额度基础层、
+基于官方登录的安全切换已经进入当前源码；低额度守护和迁移能力按
+[产品路线图](docs/ROADMAP.md) 继续实现。
 
 Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
@@ -63,8 +63,25 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
   当前可见的 Accessibility 文本读取。应用不会修改 Typeless 文件或界面状态。
 - “诊断”页说明账号目录、Keychain、Typeless 安装/运行和额度来源，不输出秘密。
 
-本阶段没有“一键切换”动作。保存账号秘密不会让 Typeless 自动登录；后续切换只会走可验证
-的官方登录/handoff/deep link 路径。
+## 安全切换
+
+账号页和菜单栏可以“一键开始”切换：Typeless++ 只打开
+[Typeless 官方登录页](https://www.typeless.com/login)，由用户在官方页面选择或登录目标账号，
+再由官网自行 handoff 到 Typeless 桌面端。Typeless++ 不读取、构造或记录官网生成的
+`typeless://` 认证链接，也不会自动填写密码。
+
+每次切换都按下面的事务执行：
+
+1. Preflight 要求当前账号已管理、额度新鲜、目标可用，并从 Typeless 2.4.0 可见控件明确
+   证明当前空闲。正在录音、仍在处理转录或活动状态未知时直接停止。
+2. 打开固定的 HTTPS 官方登录页；没有浏览器脚本、token 注入或 Typeless 私有文件修改。
+3. 最多 90 秒有限验证。只有本次请求后重新读取到目标邮箱和新鲜额度，才显示成功。
+4. 超时但原邮箱仍在时明确显示“原账号已保留”；若出现目标但额度不可验证或出现其他账号，
+   自动打开同一官方登录页恢复原账号，并继续验证原邮箱和新鲜额度。
+
+切换事件写入 `~/Library/Application Support/Typeless++/switch-audit.json`：只含 transaction/
+账号 UUID、阶段、时间、结果和固定错误码，不含邮箱、URL、密码、token、Cookie 或设备身份。
+最近记录可以在“诊断”页查看。保存账号秘密本身不会让 Typeless 自动登录。
 
 ## 系统要求
 
@@ -182,6 +199,9 @@ log stream --predicate 'subsystem == "io.github.timmyagentic.TypelessQuiet"'
 
 当前账号只读识别依赖 Typeless 2.4.0 的本地白名单字段；额度读取依赖当前界面实际暴露
 `已用 / 总量` 文本。Typeless 未运行或界面没有该文本时额度会显示“未知”，不会沿用为新鲜值。
+
+安全切换的状态机、官方 URL 边界和 fixture 成功/失败/恢复路径可以自动验证；真实切换仍需要
+用户在 Typeless 官方页面完成登录。没有指定可用目标账号时，不会在 QA 中擅自改变真实登录态。
 
 ## 参与贡献
 

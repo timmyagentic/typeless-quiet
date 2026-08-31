@@ -64,13 +64,13 @@ struct TypelessCurrentStateReader: TypelessCurrentStateReading {
         let liveQuotaDisabled = ProcessInfo.processInfo.environment[
             "TYPELESS_PLUSPLUS_DISABLE_LIVE_QUOTA"
         ] == "true"
-        if !liveQuotaDisabled,
-           let running = runningApps.first,
-           let quota = VisibleQuotaParser.parse(
-               accessibilityTexts(processIdentifier: running.processIdentifier),
-               observedAt: observedAt
-           ) {
-            state = state.merging(quota: quota)
+        if let running = runningApps.first {
+            let texts = accessibilityTexts(processIdentifier: running.processIdentifier)
+            state.activity = TypelessActivityDetector.detect(texts: texts)
+            if !liveQuotaDisabled,
+               let quota = VisibleQuotaParser.parse(texts, observedAt: observedAt) {
+                state = state.merging(quota: quota)
+            }
         }
 
         return TypelessStateReadResult(
