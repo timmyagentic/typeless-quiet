@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-quiet/actions/workflows/ci.yml)
 
-一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 中标题为
-`Upgrade for enhanced accuracy` 的付费升级提示。
+一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 的瞬时
+付费升级提示。当前源码兼容旧版 `Upgrade for enhanced accuracy`，以及 Typeless 2.4.0
+的 `Get unlimited words` / `获取无限字数` 文案。
 
 Typeless Quiet 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
@@ -25,15 +26,18 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 规则必须同时满足以下条件才会执行 `AXPress`：
 
 1. 目标进程 Bundle ID 精确等于 `now.typeless.desktop`。
-2. 容器角色精确等于 `AXUserInterfaceTooltip`。
-3. 容器或后代文本精确等于 `Upgrade for enhanced accuracy`。
+2. 容器必须是 Tooltip、Dialog、Popover、Sheet 或 Electron 映射出的 Application Dialog。
+3. 容器或后代文本必须精确等于已知的新旧英文、简体中文或繁体中文目标文案；不做模糊匹配。
 4. 关闭候选是目标卡片的后代 `AXButton`。
-5. 候选没有 Accessibility 名称，尺寸在 14–20 pt 之间，位于卡片内部右上角。
+5. 候选必须带 `AXCloseButton` / `AXCancelButton`、Close/Dismiss/关闭语义或明确的
+   close/dismiss identifier；旧版无名称 14–20 pt 按钮仅作为兼容分支。所有候选都必须
+   位于卡片内部右上角。
 6. 候选支持 `AXPress`，并且全卡片中恰好只有一个候选。
 7. 执行动作前重新抓取一次 AX 树，结果必须与首次判断完全一致。
 
 任一条件不满足、遍历超过上限、出现多个目标卡片或多个按钮时，应用都会停止本次操作。
-它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。
+它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。Typeless 2.4.0 左下角常驻的
+“获取无限字数 / 升级”订阅卡片不是瞬时容器、也没有关闭动作，因此不会被匹配或点击。
 
 ## 系统要求
 

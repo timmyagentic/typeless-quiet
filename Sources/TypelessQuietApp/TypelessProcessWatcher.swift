@@ -279,21 +279,21 @@ final class TypelessProcessWatcher {
     }
 
     private func captureDecision() -> Result<
-        (decision: MatchDecision, captures: [CapturedTooltip]),
+        (decision: MatchDecision, captures: [CapturedCard]),
         DecisionCaptureFailure
     > {
-        let tooltips: [AXUIElement]
-        switch reader.tooltipElements(in: applicationElement) {
+        let cards: [AXUIElement]
+        switch reader.targetCardElements(in: applicationElement) {
         case let .success(elements):
-            tooltips = elements
+            cards = elements
         case let .failure(failure):
             return .failure(DecisionCaptureFailure(message: String(describing: failure)))
         }
 
-        var captures: [CapturedTooltip] = []
-        captures.reserveCapacity(tooltips.count)
-        for tooltip in tooltips {
-            switch reader.capture(tooltip) {
+        var captures: [CapturedCard] = []
+        captures.reserveCapacity(cards.count)
+        for card in cards {
+            switch reader.capture(card) {
             case let .success(capture):
                 captures.append(capture)
             case let .failure(failure):

@@ -187,7 +187,7 @@ private struct MainWindowView: View {
             .toggleStyle(.switch)
             .font(.headline)
 
-            Text("只处理 Typeless 中标题为“Upgrade for enhanced accuracy”的提示；规则存在歧义时不会点击。")
+            Text("自动兼容 Typeless 2.4.0 与旧版瞬时升级提示；常驻订阅卡片和规则有歧义时不会点击。")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
