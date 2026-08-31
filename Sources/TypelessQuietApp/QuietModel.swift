@@ -9,6 +9,7 @@ final class QuietModel: ObservableObject {
     let accountManager: AccountManager
     let switchCoordinator: SwitchCoordinator
     let quotaGuardController: QuotaGuardController
+    let backupController: BackupController
     @Published private(set) var isEnabled: Bool
     @Published private(set) var accessibilityGranted = false
     @Published private(set) var typelessRunning = false
@@ -27,6 +28,7 @@ final class QuietModel: ObservableObject {
     private var accountUpdates: AnyCancellable?
     private var switchUpdates: AnyCancellable?
     private var quotaGuardUpdates: AnyCancellable?
+    private var backupUpdates: AnyCancellable?
 
     private lazy var mainWindow = MainWindowController(model: self)
 
@@ -43,7 +45,8 @@ final class QuietModel: ObservableObject {
     init(
         accountManager: AccountManager? = nil,
         switchCoordinator: SwitchCoordinator? = nil,
-        quotaGuardController: QuotaGuardController? = nil
+        quotaGuardController: QuotaGuardController? = nil,
+        backupController: BackupController? = nil
     ) {
         let resolvedAccountManager = accountManager ?? AccountManager()
         let resolvedSwitchCoordinator = switchCoordinator
@@ -53,9 +56,16 @@ final class QuietModel: ObservableObject {
                 accountManager: resolvedAccountManager,
                 switchCoordinator: resolvedSwitchCoordinator
             )
+        let resolvedBackupController = backupController
+            ?? BackupController(
+                accountManager: resolvedAccountManager,
+                quotaGuardController: resolvedQuotaGuardController,
+                switchCoordinator: resolvedSwitchCoordinator
+            )
         self.accountManager = resolvedAccountManager
         self.switchCoordinator = resolvedSwitchCoordinator
         self.quotaGuardController = resolvedQuotaGuardController
+        self.backupController = resolvedBackupController
         if defaults.object(forKey: enabledDefaultsKey) == nil {
             isEnabled = true
         } else {
@@ -83,6 +93,9 @@ final class QuietModel: ObservableObject {
             self?.objectWillChange.send()
         }
         quotaGuardUpdates = resolvedQuotaGuardController.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        backupUpdates = resolvedBackupController.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }

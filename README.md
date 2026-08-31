@@ -7,9 +7,9 @@
 `Upgrade for enhanced accuracy`，以及 Typeless 2.4.0 的
 `Get unlimited words` / `获取无限字数` 文案。
 
-`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。账号与额度基础层、
-基于官方登录的安全切换和可选低额度守护已经进入当前源码；迁移能力按
-[产品路线图](docs/ROADMAP.md) 继续实现。
+`Typeless++` 已从单一的 Quiet 工具扩展为 Typeless 的本地增强层：账号与额度基础、
+基于官方登录的安全切换、可选低额度守护，以及无秘密备份迁移都已进入当前源码。
+设计与边界见 [产品路线图](docs/ROADMAP.md)。
 
 Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
@@ -18,6 +18,8 @@ Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授�
 ![Typeless++ 主窗口](docs/assets/typeless-plusplus-main-window.png)
 
 ![Typeless++ 低额度守护](docs/assets/typeless-plusplus-quota-guard.png)
+
+![Typeless++ 备份与迁移](docs/assets/typeless-plusplus-backup-migration.png)
 
 ![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
 
@@ -103,6 +105,24 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 
 配置与冷却状态写入 `~/Library/Application Support/Typeless++/quota-guard.json`，使用 schema
 v1、0700/0600 权限，不含邮箱、密码、token、Cookie 或设备身份。
+
+## 备份与迁移
+
+“迁移”页可以导出 `typeless-plusplus-backup` schema v1 JSON，并在另一台 Mac 上预览后合并：
+
+- 导出账号 UUID、标准化邮箱、显示名称、备注、创建时间，以及守护阈值/冷却/有序账号池。
+- 明确不导出 Keychain 秘密/引用、密码、token、Cookie、验证码、额度快照、当前登录态、
+  守护 runtime、切换 audit 或 Typeless 设备身份/私有缓存。
+- 文件使用 ISO8601 日期、最大 5 MiB/1000 个账号，写入后权限为 0600；security manifest
+  明确声明不含秘密/设备身份并要求官方重新认证。
+- 导入只 merge，不删除本机账号。同邮箱保留本机 UUID、Keychain、额度和已验证状态；
+  新邮箱以 unknown、无额度、无秘密加入，UUID 冲突会重映射。
+- 守护规则会迁移，但导入后强制关闭、runtime 清零。账号目录和守护配置作为两步事务提交；
+  第二步失败会恢复两者，回滚失败会明确报错。
+- 新设备使用迁移页的“打开 Typeless 官方登录”，逐个登录后刷新。只有匹配邮箱和新鲜额度
+  都读到后，导入账号才从 unknown 变为 available。
+
+备份包含邮箱和用户备注，虽然不含应用管理的秘密，仍应像个人资料一样妥善保管。
 
 ## 系统要求
 
