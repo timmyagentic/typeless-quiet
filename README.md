@@ -11,6 +11,12 @@
 
 Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
+## 界面预览
+
+![Typeless++ 主窗口](docs/assets/typeless-plusplus-main-window.png)
+
+![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
+
 > 最近公开版本 `v0.1.5` 仍使用旧品牌 Typeless Quiet，提供 macOS 13+ Apple Silicon
 > arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
