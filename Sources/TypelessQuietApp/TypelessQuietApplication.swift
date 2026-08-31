@@ -22,6 +22,10 @@ struct TypelessQuietApplication: App {
                 Text(accountSummary)
             }
 
+            if let operation = model.switchCoordinator.operation {
+                Text(operation.menuSummary(accounts: model.accountManager.accounts))
+            }
+
             if let lastDismissal = model.lastDismissal {
                 Text("上次关闭：\(lastDismissal.formatted(date: .abbreviated, time: .standard))")
             }
@@ -34,6 +38,26 @@ struct TypelessQuietApplication: App {
 
             Button("刷新账号与额度") {
                 model.accountManager.refresh()
+            }
+
+            let switchableAccounts = model.accountManager.accounts.filter {
+                $0.status == .available && $0.email != model.accountManager.currentState?.email
+            }
+            if !switchableAccounts.isEmpty {
+                Menu("安全切换账号") {
+                    ForEach(switchableAccounts) { account in
+                        Button(account.displayName) {
+                            model.switchCoordinator.startSwitch(to: account.id)
+                        }
+                        .disabled(model.switchCoordinator.isBusy)
+                    }
+                }
+            }
+
+            if model.switchCoordinator.isBusy {
+                Button("取消切换并恢复") {
+                    model.switchCoordinator.cancelAndRestore()
+                }
             }
 
             Divider()

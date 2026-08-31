@@ -215,4 +215,13 @@ final class AccountFoundationTests: XCTestCase {
 
         XCTAssertEqual(state.merging(quota: quota).quota, quota)
     }
+
+    func testCurrentStateDecodesLegacyPayloadWithoutActivityAsUnknown() throws {
+        let json = #"{"email":"person@example.com","observedAt":0}"#
+
+        let state = try JSONDecoder().decode(CurrentTypelessState.self, from: Data(json.utf8))
+
+        XCTAssertEqual(state.email, "person@example.com")
+        XCTAssertEqual(state.activity, .unknown)
+    }
 }

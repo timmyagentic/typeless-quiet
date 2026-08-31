@@ -249,6 +249,7 @@ public struct CurrentTypelessState: Codable, Equatable, Sendable {
     public var quota: QuotaSnapshot?
     public var observedAt: Date
     public var sourceModifiedAt: Date?
+    public var activity: TypelessActivityState
 
     public init(
         email: String?,
@@ -256,7 +257,8 @@ public struct CurrentTypelessState: Codable, Equatable, Sendable {
         planName: String?,
         quota: QuotaSnapshot?,
         observedAt: Date,
-        sourceModifiedAt: Date?
+        sourceModifiedAt: Date?,
+        activity: TypelessActivityState = .unknown
     ) {
         self.email = email.flatMap(AccountProfile.normalizedEmail)
         self.displayName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -264,6 +266,7 @@ public struct CurrentTypelessState: Codable, Equatable, Sendable {
         self.quota = quota
         self.observedAt = observedAt
         self.sourceModifiedAt = sourceModifiedAt
+        self.activity = activity
     }
 
     public func merging(quota: QuotaSnapshot?) -> CurrentTypelessState {
@@ -273,6 +276,30 @@ public struct CurrentTypelessState: Codable, Equatable, Sendable {
             copy.observedAt = max(observedAt, quota.observedAt)
         }
         return copy
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case email
+        case displayName
+        case planName
+        case quota
+        case observedAt
+        case sourceModifiedAt
+        case activity
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            email: try container.decodeIfPresent(String.self, forKey: .email),
+            displayName: try container.decodeIfPresent(String.self, forKey: .displayName),
+            planName: try container.decodeIfPresent(String.self, forKey: .planName),
+            quota: try container.decodeIfPresent(QuotaSnapshot.self, forKey: .quota),
+            observedAt: try container.decode(Date.self, forKey: .observedAt),
+            sourceModifiedAt: try container.decodeIfPresent(Date.self, forKey: .sourceModifiedAt),
+            activity: try container.decodeIfPresent(TypelessActivityState.self, forKey: .activity)
+                ?? .unknown
+        )
     }
 }
 

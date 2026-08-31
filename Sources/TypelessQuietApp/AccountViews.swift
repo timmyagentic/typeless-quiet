@@ -91,6 +91,7 @@ struct CurrentAccountCard: View {
 
 struct AccountListSection: View {
     @ObservedObject var manager: AccountManager
+    @ObservedObject var switchCoordinator: SwitchCoordinator
     @State private var editor: AccountEditorDraft?
     @State private var pendingDelete: AccountProfile?
     @State private var localError: String?
@@ -110,7 +111,10 @@ struct AccountListSection: View {
                 } label: {
                     Label("添加账号", systemImage: "plus")
                 }
+                .disabled(switchCoordinator.isBusy)
             }
+
+            SwitchStatusCard(manager: manager, coordinator: switchCoordinator)
 
             if manager.accounts.isEmpty {
                 VStack(spacing: 8) {
@@ -168,6 +172,13 @@ struct AccountListSection: View {
                                 )
                             )
                             .labelsHidden()
+                            .disabled(switchCoordinator.isBusy)
+                            if manager.currentState?.email != account.email {
+                                Button("切换") {
+                                    switchCoordinator.startSwitch(to: account.id)
+                                }
+                                .disabled(account.status != .available || switchCoordinator.isBusy)
+                            }
                             Button {
                                 editor = AccountEditorDraft(account: account)
                             } label: {
@@ -175,6 +186,7 @@ struct AccountListSection: View {
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel("编辑 \(account.displayName)")
+                            .disabled(switchCoordinator.isBusy)
                             Button(role: .destructive) {
                                 pendingDelete = account
                             } label: {
@@ -182,6 +194,7 @@ struct AccountListSection: View {
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel("删除 \(account.displayName)")
+                            .disabled(switchCoordinator.isBusy)
                         }
                         .padding(.vertical, 4)
                     }
@@ -197,13 +210,21 @@ struct AccountListSection: View {
         }
         .padding(20)
         .sheet(item: $editor) { draft in
-            AccountEditorView(manager: manager, draft: draft)
+            AccountEditorView(
+                manager: manager,
+                switchCoordinator: switchCoordinator,
+                draft: draft
+            )
         }
         .alert(item: $pendingDelete) { account in
             Alert(
                 title: Text("删除 \(account.displayName)？"),
                 message: Text("账号元数据和对应 Keychain 秘密将从 Typeless++ 删除，不会修改 Typeless。"),
                 primaryButton: .destructive(Text("删除")) {
+                    guard !switchCoordinator.isBusy else {
+                        localError = "切换进行中，账号目录已锁定"
+                        return
+                    }
                     do {
                         try manager.removeAccount(id: account.id)
                         localError = nil
@@ -217,8 +238,116 @@ struct AccountListSection: View {
     }
 }
 
+struct SwitchStatusCard: View {
+    @ObservedObject var manager: AccountManager
+    @ObservedObject var coordinator: SwitchCoordinator
+
+    var body: some View {
+        if let operation = coordinator.operation {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    if coordinator.isBusy {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: operation.outcome == .succeeded
+                            ? "checkmark.circle.fill"
+                            : "arrow.triangle.2.circlepath.circle")
+                            .foregroundStyle(operation.outcome == .succeeded ? .green : .orange)
+                    }
+                    Text(title(for: operation)).font(.headline)
+                    Spacer()
+                }
+
+                Text(detail(for: operation))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack {
+                    if coordinator.isBusy {
+                        Button(operation.phase == .restoring
+                            ? "重新打开恢复页面"
+                            : "重新打开官方登录") {
+                            coordinator.reopenOfficialLogin()
+                        }
+                        if operation.phase != .restoring {
+                            Button("取消并恢复") {
+                                coordinator.cancelAndRestore()
+                            }
+                        }
+                    } else {
+                        if coordinator.canRecoverTerminalOperation {
+                            Button("打开官方恢复页") {
+                                coordinator.recoverTerminalOperation()
+                            }
+                        }
+                        Button("关闭提示") {
+                            coordinator.dismissTerminalOperation()
+                        }
+                    }
+                }
+
+                if let auditError = coordinator.auditError {
+                    Label(
+                        "切换审计不可用：\(auditError)",
+                        systemImage: "exclamationmark.triangle.fill"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                }
+            }
+            .cardStyle()
+        }
+    }
+
+    private func title(for operation: SwitchOperation) -> String {
+        let target = accountName(operation.targetAccountID)
+        let original = operation.originalAccountID.map(accountName) ?? "原账号"
+        switch operation.phase {
+        case .preflight: return "正在检查是否可以切换"
+        case .requestingSwitch: return "正在打开 Typeless 官方登录"
+        case .verifying: return "正在验证 \(target)"
+        case .restoring: return "正在恢复 \(original)"
+        case .succeeded: return "已安全切换到 \(target)"
+        case .failed:
+            switch operation.outcome {
+            case .originalPreserved: return "未切换，\(original) 已保留"
+            case .originalRestored: return "切换未完成，已恢复 \(original)"
+            case .recoveryRequired: return "需要恢复 \(original)"
+            case .cancelled: return "已取消切换"
+            case .succeeded: return "已安全切换到 \(target)"
+            case nil: return "切换未完成"
+            }
+        }
+    }
+
+    private func detail(for operation: SwitchOperation) -> String {
+        let target = accountName(operation.targetAccountID)
+        let original = operation.originalAccountID.map(accountName) ?? "原账号"
+        switch operation.phase {
+        case .preflight:
+            return "正在确认 Typeless 空闲、当前账号和额度新鲜度。"
+        case .requestingSwitch:
+            return "Typeless++ 只打开官网，不读取或保存登录链接中的认证信息。"
+        case .verifying:
+            return "请在官方页面登录“\(target)”。只有重新读到目标邮箱和本次操作后的新鲜额度才会成功。"
+        case .restoring:
+            return "官方恢复页已打开，请登录“\(original)”；验证原邮箱和新鲜额度后才算恢复完成。"
+        case .succeeded:
+            return "目标邮箱和新鲜额度均已从 Typeless 2.4.0 只读状态确认。"
+        case .failed:
+            return operation.failureCode?.userMessage ?? "切换没有完成。"
+        }
+    }
+
+    private func accountName(_ id: UUID) -> String {
+        manager.accounts.first(where: { $0.id == id })?.displayName ?? "账号"
+    }
+}
+
 struct AccountDiagnosticsSection: View {
     @ObservedObject var manager: AccountManager
+    @ObservedObject var switchCoordinator: SwitchCoordinator
 
     var body: some View {
         VStack(spacing: 12) {
@@ -235,20 +364,61 @@ struct AccountDiagnosticsSection: View {
                 }
             }
 
-            List(manager.diagnostics) { item in
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: item.level.symbolName)
-                        .foregroundStyle(item.level.color)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(item.title).font(.headline)
-                        Text(item.detail).font(.caption).foregroundStyle(.secondary)
+            List {
+                Section("环境") {
+                    ForEach(manager.diagnostics) { item in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: item.level.symbolName)
+                                .foregroundStyle(item.level.color)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title).font(.headline)
+                                Text(item.detail).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
-                .padding(.vertical, 4)
+
+                Section("最近切换") {
+                    if switchCoordinator.auditEvents.isEmpty {
+                        Text("暂无切换记录")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(Array(switchCoordinator.auditEvents.suffix(20).reversed())) { event in
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack {
+                                    Text(event.phase.displayName).font(.headline)
+                                    Spacer()
+                                    Text(event.occurredAt.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text(auditDetail(event))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 3)
+                        }
+                    }
+                }
             }
             .listStyle(.inset)
         }
         .padding(20)
+    }
+
+    private func auditDetail(_ event: SwitchAuditEvent) -> String {
+        let target = manager.accounts.first(where: { $0.id == event.targetAccountID })?.displayName
+            ?? "已删除账号"
+        if let outcome = event.outcome {
+            let result = outcome.displayName
+            if let failure = event.failureCode {
+                return "目标：\(target) · \(result) · \(failure.userMessage)"
+            }
+            return "目标：\(target) · \(result)"
+        }
+        return "目标：\(target) · 进行中"
     }
 }
 
@@ -275,6 +445,7 @@ struct AccountEditorDraft: Identifiable {
 
 private struct AccountEditorView: View {
     @ObservedObject var manager: AccountManager
+    @ObservedObject var switchCoordinator: SwitchCoordinator
     let draft: AccountEditorDraft
     @Environment(\.dismiss) private var dismiss
     @State private var displayName: String
@@ -286,8 +457,13 @@ private struct AccountEditorView: View {
     @State private var clearSecret = false
     @State private var errorText: String?
 
-    init(manager: AccountManager, draft: AccountEditorDraft) {
+    init(
+        manager: AccountManager,
+        switchCoordinator: SwitchCoordinator,
+        draft: AccountEditorDraft
+    ) {
         self.manager = manager
+        self.switchCoordinator = switchCoordinator
         self.draft = draft
         _displayName = State(initialValue: draft.displayName)
         _email = State(initialValue: draft.email)
@@ -334,6 +510,7 @@ private struct AccountEditorView: View {
                 Button("取消") { dismiss() }
                 Button("保存") { save() }
                     .keyboardShortcut(.defaultAction)
+                    .disabled(switchCoordinator.isBusy)
             }
         }
         .padding(24)
@@ -341,6 +518,10 @@ private struct AccountEditorView: View {
     }
 
     private func save() {
+        guard !switchCoordinator.isBusy else {
+            errorText = "切换进行中，账号目录已锁定"
+            return
+        }
         do {
             if let accountID = draft.accountID {
                 try manager.updateAccount(
@@ -393,6 +574,74 @@ private extension AccountDiagnosticLevel {
         case .success: .green
         case .warning: .orange
         case .error: .red
+        }
+    }
+}
+
+extension SwitchOperation {
+    func menuSummary(accounts: [AccountProfile]) -> String {
+        let target = accounts.first(where: { $0.id == targetAccountID })?.displayName ?? "目标账号"
+        switch phase {
+        case .preflight: return "切换：安全检查中"
+        case .requestingSwitch: return "切换：正在打开官网"
+        case .verifying: return "切换：正在验证 \(target)"
+        case .restoring: return "切换：正在恢复原账号"
+        case .succeeded: return "切换：\(target) 已验证"
+        case .failed: return "切换：未完成"
+        }
+    }
+}
+
+private extension SwitchFailureCode {
+    var userMessage: String {
+        switch self {
+        case .transactionInProgress: "已有切换正在进行。"
+        case .targetNotFound: "目标账号已不存在，请刷新账号列表。"
+        case .targetNotAvailable: "目标账号已暂停、额度用尽或状态未知。"
+        case .alreadyCurrent: "目标账号就是当前账号。"
+        case .typelessNotRunning: "Typeless 未运行；打开 Typeless 后再试。"
+        case .currentAccountUnreadable: "当前 Typeless 账号不可读，已安全停止。"
+        case .currentAccountUnmanaged: "请先把当前 Typeless 账号加入管理，才能保留回滚目标。"
+        case .currentQuotaMissing: "当前额度未知，无法建立可验证的切换基线。"
+        case .currentQuotaStale: "当前额度快照已过期，请刷新后重试。"
+        case .activityRecording: "Typeless 正在录音，已禁止切换。"
+        case .activityProcessing: "Typeless 正在处理转录，已禁止切换。"
+        case .activityUnknown: "无法证明 Typeless 已空闲，已安全停止。"
+        case .officialLoginOpenFailed: "未能打开 Typeless 官方登录页，原账号未改动。"
+        case .verificationTimedOut: "在时限内没有验证到目标账号；原账号仍在使用。"
+        case .verificationObservedDifferentAccount: "Typeless 显示了非目标账号，已启动官方恢复。"
+        case .verificationQuotaMissingOrStale: "已看到目标邮箱，但没有本次操作后的新鲜额度，已启动恢复。"
+        case .originalStateUnverified: "仍看到原邮箱，但额度不是本次操作后的新鲜快照，已启动恢复验证。"
+        case .cancelled: "切换已取消。"
+        case .rollbackOpenFailed: "未能打开官方恢复页，请点击重新打开并登录原账号。"
+        case .rollbackTimedOut: "尚未验证原账号恢复，请重新打开官方页面继续恢复。"
+        case .auditWriteFailed: "切换审计不可写；为避免无记录切换，官方登录页没有打开。"
+        case .interrupted: "上次切换被应用退出中断，没有自动继续。"
+        }
+    }
+}
+
+private extension SwitchPhase {
+    var displayName: String {
+        switch self {
+        case .preflight: "Preflight"
+        case .requestingSwitch: "打开官方登录"
+        case .verifying: "验证目标账号"
+        case .succeeded: "切换成功"
+        case .failed: "切换结束"
+        case .restoring: "恢复原账号"
+        }
+    }
+}
+
+private extension SwitchOutcome {
+    var displayName: String {
+        switch self {
+        case .succeeded: "成功"
+        case .originalPreserved: "原账号已保留"
+        case .originalRestored: "原账号已恢复"
+        case .recoveryRequired: "仍需恢复"
+        case .cancelled: "已取消"
         }
     }
 }

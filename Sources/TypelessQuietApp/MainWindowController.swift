@@ -104,9 +104,15 @@ private struct MainWindowView: View {
                 case .overview:
                     overview(snapshot)
                 case .accounts:
-                    AccountListSection(manager: accountManager)
+                    AccountListSection(
+                        manager: accountManager,
+                        switchCoordinator: model.switchCoordinator
+                    )
                 case .diagnostics:
-                    AccountDiagnosticsSection(manager: accountManager)
+                    AccountDiagnosticsSection(
+                        manager: accountManager,
+                        switchCoordinator: model.switchCoordinator
+                    )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -132,6 +138,10 @@ private struct MainWindowView: View {
         ScrollView {
             VStack(spacing: 14) {
                 CurrentAccountCard(manager: accountManager)
+                SwitchStatusCard(
+                    manager: accountManager,
+                    coordinator: model.switchCoordinator
+                )
                 automaticDismissCard(snapshot)
                 systemAccessCard(snapshot)
 
