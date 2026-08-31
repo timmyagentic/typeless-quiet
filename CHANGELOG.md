@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- 增加账号与额度基础层：概览、账号、诊断三页，以及菜单栏当前账号/额度摘要。
+- 增加 schema v1 账号目录、邮箱标准化与重复检查、排序、暂停、编辑和删除；账号 JSON
+  使用原子写入与仅当前用户可读权限。
+- 增加按账号 UUID 隔离的 macOS Keychain 秘密存储；元数据与 Keychain 以可回滚事务提交，
+  保存失败不会留下半完成状态。
+- 只读解析 Typeless 2.4.0 `app-storage.json` 的账号白名单字段，并从当前 Accessibility
+  文本识别本地化额度；不读取、保存或记录 token、Cookie、验证码和设备身份。
+- 增加账号目录、Keychain、Typeless 运行/版本和额度来源自检；读取不到可靠额度时显示未知。
 - 产品更名为 `Typeless++`，源码仓库迁移为 `timmyagentic/typeless-plusplus`；Swift package/product、App/DMG 本地产物、主窗口、菜单、权限引导与文档统一使用新品牌。
 - 保留旧 Bundle ID `io.github.timmyagentic.TypelessQuiet`、UserDefaults keys 和窗口状态 key，避免已安装用户重新授权或丢失设置。
 - 增加账号管理与安全切换路线图；本阶段不实现账号切换、自动注册、设备身份重置或 token 注入。

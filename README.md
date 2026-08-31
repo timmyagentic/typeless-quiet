@@ -2,12 +2,14 @@
 
 [![CI](https://github.com/timmyagentic/typeless-plusplus/actions/workflows/ci.yml/badge.svg)](https://github.com/timmyagentic/typeless-plusplus/actions/workflows/ci.yml)
 
-一个轻量、原生的 macOS 菜单栏工具，提供简洁主窗口，只负责自动关闭 Typeless 的瞬时
-付费升级提示。当前源码兼容旧版 `Upgrade for enhanced accuracy`，以及 Typeless 2.4.0
-的 `Get unlimited words` / `获取无限字数` 文案。
+一个轻量、原生的 macOS 菜单栏工具：自动关闭 Typeless 的瞬时付费升级提示，并在本机
+管理用户已有账号、只读显示当前账号与剩余额度。当前源码兼容旧版
+`Upgrade for enhanced accuracy`，以及 Typeless 2.4.0 的
+`Get unlimited words` / `获取无限字数` 文案。
 
-`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。后续账号管理与安全
-切换能力见 [产品路线图](docs/ROADMAP.md)；当前源码尚未实现账号切换。
+`Typeless++` 正在从单一的 Quiet 工具扩展为 Typeless 的本地增强层。账号与额度基础层
+已经进入当前源码；安全切换、低额度守护和迁移能力按
+[产品路线图](docs/ROADMAP.md) 继续实现。当前源码尚未执行账号切换。
 
 Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授权或合作关系。
 
@@ -48,6 +50,21 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 任一条件不满足、遍历超过上限、出现多个目标卡片或多个按钮时，应用都会停止本次操作。
 它不会全局搜索 Close 按钮，也不会使用屏幕坐标点击。Typeless 2.4.0 左下角常驻的
 “获取无限字数 / 升级”订阅卡片不是瞬时容器、也没有关闭动作，因此不会被匹配或点击。
+
+## 账号与额度
+
+- “概览”只读显示 Typeless 当前账号、订阅方案和剩余额度；无法可靠读取时明确显示“未知”。
+- “账号”页管理用户已有账号，可添加、编辑、暂停和删除，并按标准化邮箱拒绝重复项。
+- 普通账号元数据写入 `~/Library/Application Support/Typeless++/accounts.json`，使用
+  schema v1、原子写入和仅当前用户可读权限。
+- 密码等可选秘密按账号 UUID 独立写入 macOS Keychain；账号 JSON 不含密码、token、
+  Cookie、验证码或 Typeless 设备身份。
+- 当前身份只从 Typeless `app-storage.json` 的白名单字段读取；额度优先从 Typeless
+  当前可见的 Accessibility 文本读取。应用不会修改 Typeless 文件或界面状态。
+- “诊断”页说明账号目录、Keychain、Typeless 安装/运行和额度来源，不输出秘密。
+
+本阶段没有“一键切换”动作。保存账号秘密不会让 Typeless 自动登录；后续切换只会走可验证
+的官方登录/handoff/deep link 路径。
 
 ## 系统要求
 
@@ -162,6 +179,9 @@ log stream --predicate 'subsystem == "io.github.timmyagentic.TypelessQuiet"'
 匹配器、Release 构建、应用包结构和签名可以自动验证；但目标提示由服务器下发，
 只有它实际出现时才能确认 Typeless 当前版本暴露的 AX Role、层级和几何仍与规则一致。
 在完成这项现场验证前，真实自动关闭行为应视为 `UNVERIFIED`。
+
+当前账号只读识别依赖 Typeless 2.4.0 的本地白名单字段；额度读取依赖当前界面实际暴露
+`已用 / 总量` 文本。Typeless 未运行或界面没有该文本时额度会显示“未知”，不会沿用为新鲜值。
 
 ## 参与贡献
 

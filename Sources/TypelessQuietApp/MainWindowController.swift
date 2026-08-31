@@ -1,5 +1,4 @@
 import AppKit
-import Combine
 import SwiftUI
 
 private struct MainWindowSnapshot {
@@ -32,24 +31,18 @@ private struct MainWindowSnapshot {
 
 @MainActor
 final class MainWindowController {
-    private weak var model: QuietModel?
+    private let model: QuietModel
+    private let accountManager: AccountManager
     private var window: NSWindow?
-    private var hostingController: NSHostingController<MainWindowView>?
-    private var modelUpdates: AnyCancellable?
 
     init(model: QuietModel) {
         self.model = model
-        modelUpdates = model.objectWillChange.sink { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.refreshContent()
-            }
-        }
+        accountManager = model.accountManager
     }
 
     func show() {
         let window = window ?? makeWindow()
         self.window = window
-        refreshContent()
         NSApplication.shared.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
@@ -59,8 +52,10 @@ final class MainWindowController {
     }
 
     private func makeWindow() -> NSWindow {
-        let hostingController = NSHostingController(rootView: makeContentView())
-        self.hostingController = hostingController
+        let hostingController = NSHostingController(rootView: MainWindowView(
+            model: model,
+            accountManager: accountManager
+        ))
 
         let window = NSWindow(
             contentRect: .zero,
@@ -78,76 +73,79 @@ final class MainWindowController {
         window.center()
         return window
     }
-
-    private func refreshContent() {
-        guard window != nil else { return }
-        hostingController?.rootView = makeContentView()
-    }
-
-    private func makeContentView() -> MainWindowView {
-        guard let model else {
-            return MainWindowView(snapshot: nil)
-        }
-        return MainWindowView(
-            snapshot: MainWindowSnapshot(model: model),
-            setEnabled: { [weak model] in model?.setEnabled($0) },
-            requestAccessibility: { [weak model] in model?.requestAccessibility() },
-            setLaunchAtLogin: { [weak model] in model?.setLaunchAtLogin($0) },
-            openLoginItemSettings: { [weak model] in model?.openLoginItemSettings() },
-            quit: { [weak model] in model?.quit() }
-        )
-    }
 }
 
 private struct MainWindowView: View {
-    let snapshot: MainWindowSnapshot?
-    var setEnabled: (Bool) -> Void = { _ in }
-    var requestAccessibility: () -> Void = {}
-    var setLaunchAtLogin: (Bool) -> Void = { _ in }
-    var openLoginItemSettings: () -> Void = {}
-    var quit: () -> Void = {}
+    @ObservedObject var model: QuietModel
+    @ObservedObject var accountManager: AccountManager
+    @State private var selectedSection = MainWindowSection.overview
 
     var body: some View {
-        if let snapshot {
-            VStack(spacing: 0) {
-                header(snapshot)
+        let snapshot = MainWindowSnapshot(model: model)
+        VStack(spacing: 0) {
+            header(snapshot)
 
-                Divider()
+            Divider()
 
-                VStack(spacing: 14) {
-                    automaticDismissCard(snapshot)
-                    systemAccessCard(snapshot)
-
-                    if let issueText = snapshot.issueText {
-                        Label(issueText, systemImage: "exclamationmark.triangle.fill")
-                            .font(.callout)
-                            .foregroundStyle(.orange)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                            .background(Color.orange.opacity(0.10))
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    }
+            Picker("页面", selection: $selectedSection) {
+                ForEach(MainWindowSection.allCases) { section in
+                    Text(section.rawValue).tag(section)
                 }
-                .padding(24)
-
-                Divider()
-
-                HStack {
-                    Text("关闭窗口后，Typeless++ 仍会在菜单栏运行。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button("退出", action: quit)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 14)
             }
-            .frame(width: 480)
-        } else {
-            ProgressView()
-                .frame(width: 480, height: 300)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            Group {
+                switch selectedSection {
+                case .overview:
+                    overview(snapshot)
+                case .accounts:
+                    AccountListSection(manager: accountManager)
+                case .diagnostics:
+                    AccountDiagnosticsSection(manager: accountManager)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Divider()
+
+            HStack {
+                Text("关闭窗口后，Typeless++ 仍会在菜单栏运行。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button("退出", action: model.quit)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+        }
+        .frame(width: 720, height: 620)
+    }
+
+    private func overview(_ snapshot: MainWindowSnapshot) -> some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                CurrentAccountCard(manager: accountManager)
+                automaticDismissCard(snapshot)
+                systemAccessCard(snapshot)
+
+                if let issueText = snapshot.issueText {
+                    Label(issueText, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(Color.orange.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+            }
+            .padding(20)
         }
     }
 
@@ -183,7 +181,7 @@ private struct MainWindowView: View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle(
                 "自动关闭升级提示",
-                isOn: Binding(get: { snapshot.isEnabled }, set: setEnabled)
+                isOn: Binding(get: { snapshot.isEnabled }, set: model.setEnabled)
             )
             .toggleStyle(.switch)
             .font(.headline)
@@ -209,7 +207,7 @@ private struct MainWindowView: View {
                         .font(.callout.weight(.medium))
                         .foregroundStyle(.green)
                 } else {
-                    Button("设置…", action: requestAccessibility)
+                    Button("设置…", action: model.requestAccessibility)
                 }
             }
 
@@ -225,7 +223,7 @@ private struct MainWindowView: View {
                     "登录时启动",
                     isOn: Binding(
                         get: { snapshot.launchAtLoginEnabled },
-                        set: setLaunchAtLogin
+                        set: model.setLaunchAtLogin
                     )
                 )
                 .labelsHidden()
@@ -240,7 +238,7 @@ private struct MainWindowView: View {
 
                     Spacer()
 
-                    Button("打开系统设置", action: openLoginItemSettings)
+                    Button("打开系统设置", action: model.openLoginItemSettings)
                 }
             }
         }
@@ -258,7 +256,7 @@ private struct MainWindowView: View {
     }
 }
 
-private extension View {
+extension View {
     func cardStyle() -> some View {
         padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)

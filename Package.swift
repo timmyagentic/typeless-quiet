@@ -21,6 +21,10 @@ let package = Package(
             name: "TypelessQuietCoreTests",
             dependencies: ["TypelessQuietCore"]
         ),
+        .testTarget(
+            name: "TypelessQuietAppTests",
+            dependencies: ["TypelessQuietApp", "TypelessQuietCore"]
+        ),
     ],
     swiftLanguageModes: [.v5]
 )

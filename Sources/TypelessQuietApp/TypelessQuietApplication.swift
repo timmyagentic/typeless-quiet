@@ -18,12 +18,22 @@ struct TypelessQuietApplication: App {
         MenuBarExtra {
             Text(model.statusText)
 
+            if let accountSummary = model.accountManager.menuSummary {
+                Text(accountSummary)
+            }
+
             if let lastDismissal = model.lastDismissal {
                 Text("上次关闭：\(lastDismissal.formatted(date: .abbreviated, time: .standard))")
             }
 
             if let issueText = model.issueText {
                 Text(issueText)
+            }
+
+            Divider()
+
+            Button("刷新账号与额度") {
+                model.accountManager.refresh()
             }
 
             Divider()

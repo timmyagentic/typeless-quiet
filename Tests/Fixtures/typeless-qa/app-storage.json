@@ -1,0 +1,11 @@
+{
+  "userData": {
+    "email": "qa.person@example.test",
+    "name": "QA Person",
+    "subscription_plan_name": "QA Plan"
+  },
+  "quotaUsage": {
+    "used": 3456,
+    "limit": 8000
+  }
+}

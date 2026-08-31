@@ -6,6 +6,7 @@ import TypelessQuietCore
 
 @MainActor
 final class QuietModel: ObservableObject {
+    let accountManager: AccountManager
     @Published private(set) var isEnabled: Bool
     @Published private(set) var accessibilityGranted = false
     @Published private(set) var typelessRunning = false
@@ -21,6 +22,7 @@ final class QuietModel: ObservableObject {
     private let launchAtLoginInitializedKey = "InitialSetup.LaunchAtLogin.v1"
     private let initialSetupPolicy = InitialSetupPolicy()
     private var permissionTimer: Timer?
+    private var accountUpdates: AnyCancellable?
 
     private lazy var mainWindow = MainWindowController(model: self)
 
@@ -34,7 +36,9 @@ final class QuietModel: ObservableObject {
         self?.handleMonitorEvent(event)
     }
 
-    init() {
+    init(accountManager: AccountManager? = nil) {
+        let resolvedAccountManager = accountManager ?? AccountManager()
+        self.accountManager = resolvedAccountManager
         if defaults.object(forKey: enabledDefaultsKey) == nil {
             isEnabled = true
         } else {
@@ -55,6 +59,9 @@ final class QuietModel: ObservableObject {
         timer.tolerance = 0.1
         RunLoop.main.add(timer, forMode: .common)
         permissionTimer = timer
+        accountUpdates = resolvedAccountManager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
     }
 
     var statusText: String {
@@ -102,6 +109,7 @@ final class QuietModel: ObservableObject {
 
     func showPrimaryInterface() {
         if accessibilityGranted {
+            accountManager.refresh()
             mainWindow.show()
         } else {
             accessibilityOnboarding.show()
