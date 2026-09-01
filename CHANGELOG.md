@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.0.1-beta.2] - 2026-09-02
+
+- 适配 Typeless 2.5.0 的官方每周用量模型：确认 `week_word_usage_value / week_word_usage_limit`
+  由官方主 Hub 渲染为 `已用 / 每周上限 words/字`，Typeless++ 仍只读取可见 AX 文本，不读取
+  `/user/usage_stats` 所需的 token、Cookie 或其他认证材料。
+- 增加按标准化当前邮箱和 Typeless PID 隔离的 5 分钟内存缓存；主 Hub 被更新说明、设置窗口等
+  临时遮挡时保留最近一次官方可见快照，并保留原观察时间，不写文件、不导出、不跨账号/进程。
+- 支持官方 “Weekly limit reached / 已达到每周限制 / 每週限制已達” 状态；只有已经观察到可信上限
+  时才刷新为 0 剩余，否则继续 unknown/fail-closed。
+- 诊断页区分官方可见周额度、临时遮挡缓存、每周限制已达与不可用来源；缓存超过 5 分钟后
+  自动失效，安全切换仍要求 request 之后的新鲜目标额度。
+- Live QA 在 Typeless 2.5.0 上只读识别当前身份和新鲜周额度通过；App 短版本保持 `0.0.1`，
+  构建号升级为 `8`，GitHub prerelease 标签为 `v0.0.1-beta.2`。
+
 ## [0.0.1-beta.1] - 2026-09-01
 
 - 首个以 `Typeless++` 品牌公开的 Beta；App 短版本 `0.0.1`、构建号 `7`，GitHub prerelease

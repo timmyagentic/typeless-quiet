@@ -404,6 +404,21 @@ public enum VisibleQuotaParser {
         return nil
     }
 
+    public static func indicatesWeeklyLimitReached(_ texts: [String]) -> Bool {
+        let recognized = Set([
+            "weekly limit reached",
+            "已达到每周限制",
+            "每周限制已达",
+            "每周限制已达到",
+            "每週限制已達",
+        ])
+        return texts.contains { text in
+            recognized.contains(
+                text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            )
+        }
+    }
+
     private static func integer(from text: String) -> Int? {
         let digits = text.filter(\.isNumber)
         return digits.isEmpty ? nil : Int(digits)

@@ -8,6 +8,123 @@ struct TypelessStateReadResult: Sendable {
     let storageURL: URL
     let appVersion: String?
     let appRunning: Bool
+    let quotaProvenance: TypelessQuotaReadProvenance
+
+    init(
+        state: CurrentTypelessState,
+        storageURL: URL,
+        appVersion: String?,
+        appRunning: Bool,
+        quotaProvenance: TypelessQuotaReadProvenance? = nil
+    ) {
+        self.state = state
+        self.storageURL = storageURL
+        self.appVersion = appVersion
+        self.appRunning = appRunning
+        if let quotaProvenance {
+            self.quotaProvenance = quotaProvenance
+        } else {
+            self.quotaProvenance = switch state.quota?.source {
+            case .typelessAccessibility: .visibleAccessibility
+            case .typelessLocalStorage: .localStorage
+            case nil: .unavailable
+            }
+        }
+    }
+}
+
+enum TypelessQuotaReadProvenance: Equatable, Sendable {
+    case unavailable
+    case localStorage
+    case visibleAccessibility
+    case cachedAccessibility
+    case visibleWeeklyLimitReached
+}
+
+struct TypelessVisibleQuotaResolution: Equatable, Sendable {
+    let quota: QuotaSnapshot?
+    let provenance: TypelessQuotaReadProvenance
+
+    static let unavailable = TypelessVisibleQuotaResolution(
+        quota: nil,
+        provenance: .unavailable
+    )
+}
+
+final class TypelessVisibleQuotaCache {
+    private struct Entry {
+        let email: String
+        let processIdentifier: pid_t
+        let quota: QuotaSnapshot
+    }
+
+    private let maximumAge: TimeInterval
+    private let lock = NSLock()
+    private var entry: Entry?
+
+    init(maximumAge: TimeInterval = 300) {
+        self.maximumAge = maximumAge
+    }
+
+    func resolve(
+        email: String?,
+        processIdentifier: pid_t,
+        texts: [String],
+        observedAt: Date
+    ) -> TypelessVisibleQuotaResolution {
+        lock.lock()
+        defer { lock.unlock() }
+
+        let normalizedEmail = email.flatMap(AccountProfile.normalizedEmail)
+        if let visible = VisibleQuotaParser.parse(texts, observedAt: observedAt) {
+            if let normalizedEmail {
+                entry = Entry(
+                    email: normalizedEmail,
+                    processIdentifier: processIdentifier,
+                    quota: visible
+                )
+            } else {
+                entry = nil
+            }
+            return TypelessVisibleQuotaResolution(
+                quota: visible,
+                provenance: .visibleAccessibility
+            )
+        }
+
+        guard let normalizedEmail,
+              let entry,
+              entry.email == normalizedEmail,
+              entry.processIdentifier == processIdentifier,
+              entry.quota.isFresh(at: observedAt, maximumAge: maximumAge)
+        else {
+            self.entry = nil
+            return .unavailable
+        }
+
+        if VisibleQuotaParser.indicatesWeeklyLimitReached(texts) {
+            let reached = QuotaSnapshot(
+                usedCharacters: entry.quota.limitCharacters,
+                limitCharacters: entry.quota.limitCharacters,
+                observedAt: observedAt,
+                source: .typelessAccessibility
+            )
+            self.entry = Entry(
+                email: normalizedEmail,
+                processIdentifier: processIdentifier,
+                quota: reached
+            )
+            return TypelessVisibleQuotaResolution(
+                quota: reached,
+                provenance: .visibleWeeklyLimitReached
+            )
+        }
+
+        return TypelessVisibleQuotaResolution(
+            quota: entry.quota,
+            provenance: .cachedAccessibility
+        )
+    }
 }
 
 enum TypelessStateReaderError: LocalizedError {
@@ -40,6 +157,11 @@ private struct TypelessAXIdentitySet {
 
 struct TypelessCurrentStateReader: TypelessCurrentStateReading {
     private let fileManager = FileManager.default
+    private let visibleQuotaCache: TypelessVisibleQuotaCache
+
+    init(visibleQuotaCache: TypelessVisibleQuotaCache = TypelessVisibleQuotaCache()) {
+        self.visibleQuotaCache = visibleQuotaCache
+    }
 
     func read() throws -> TypelessStateReadResult {
         guard let storageURL = storageCandidates.first(where: {
@@ -57,6 +179,9 @@ struct TypelessCurrentStateReader: TypelessCurrentStateReading {
             observedAt: observedAt,
             fileModifiedAt: modifiedAt
         )
+        var quotaProvenance: TypelessQuotaReadProvenance = state.quota == nil
+            ? .unavailable
+            : .localStorage
 
         let runningApps = NSRunningApplication.runningApplications(
             withBundleIdentifier: TargetPromptMatcher.targetBundleIdentifier
@@ -67,9 +192,17 @@ struct TypelessCurrentStateReader: TypelessCurrentStateReading {
         if let running = runningApps.first {
             let texts = accessibilityTexts(processIdentifier: running.processIdentifier)
             state.activity = TypelessActivityDetector.detect(texts: texts)
-            if !liveQuotaDisabled,
-               let quota = VisibleQuotaParser.parse(texts, observedAt: observedAt) {
-                state = state.merging(quota: quota)
+            if !liveQuotaDisabled {
+                let resolution = visibleQuotaCache.resolve(
+                    email: state.email,
+                    processIdentifier: running.processIdentifier,
+                    texts: texts,
+                    observedAt: observedAt
+                )
+                if let quota = resolution.quota {
+                    state = state.merging(quota: quota)
+                    quotaProvenance = resolution.provenance
+                }
             }
         }
 
@@ -77,7 +210,8 @@ struct TypelessCurrentStateReader: TypelessCurrentStateReading {
             state: state,
             storageURL: storageURL,
             appVersion: installedTypelessVersion,
-            appRunning: !runningApps.isEmpty
+            appRunning: !runningApps.isEmpty,
+            quotaProvenance: quotaProvenance
         )
     }
 
