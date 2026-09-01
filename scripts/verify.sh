@@ -26,9 +26,9 @@ test "$(plutil -extract CFBundleName raw -o - \
 test "$(plutil -extract CFBundleExecutable raw -o - \
   "$app_path/Contents/Info.plist")" = "TypelessPlusPlus"
 test "$(plutil -extract CFBundleShortVersionString raw -o - \
-  "$app_path/Contents/Info.plist")" = "0.1.5"
+  "$app_path/Contents/Info.plist")" = "0.0.1"
 test "$(plutil -extract CFBundleVersion raw -o - \
-  "$app_path/Contents/Info.plist")" = "6"
+  "$app_path/Contents/Info.plist")" = "7"
 test "$(plutil -extract LSUIElement raw -o - "$app_path/Contents/Info.plist")" = "true"
 test "$(plutil -extract CFBundleIconFile raw -o - "$app_path/Contents/Info.plist")" = "AppIcon"
 test -x "$binary_path"

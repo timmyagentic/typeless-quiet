@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.1-beta.1] - 2026-09-01
+
+- 首个以 `Typeless++` 品牌公开的 Beta；App 短版本 `0.0.1`、构建号 `7`，GitHub prerelease
+  标签为 `v0.0.1-beta.1`。
 - 增加 `typeless-plusplus-backup` schema v1 无秘密 JSON 导出：账号元数据和守护规则使用
   ISO8601/0600 文件，security manifest 明确不含秘密/设备身份并要求官方重新认证。
 - 增加严格导入校验：5 MiB/1000 账号上限、格式/schema、安全声明、重复邮箱/UUID、池引用、
