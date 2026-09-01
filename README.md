@@ -23,7 +23,7 @@ Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授�
 
 ![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
 
-> 当前 Beta `v0.0.1-beta.1` 是首个 Typeless++ 品牌发行版，提供 macOS 13+ Apple Silicon
+> 当前 Beta `v0.0.1-beta.2` 增加 Typeless 2.5.0 官方周额度适配，提供 macOS 13+ Apple Silicon
 > arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
@@ -63,8 +63,12 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
   schema v1、原子写入和仅当前用户可读权限。
 - 密码等可选秘密按账号 UUID 独立写入 macOS Keychain；账号 JSON 不含密码、token、
   Cookie、验证码或 Typeless 设备身份。
-- 当前身份只从 Typeless `app-storage.json` 的白名单字段读取；额度优先从 Typeless
-  当前可见的 Accessibility 文本读取。应用不会修改 Typeless 文件或界面状态。
+- 当前身份只从 Typeless `app-storage.json` 的白名单字段读取；额度只从 Typeless 2.4/2.5
+  当前可见的官方 Accessibility 文本读取。应用不会修改 Typeless 文件或界面状态，也不会
+  调用需要 Typeless token/Cookie 的 `/user/usage_stats`。
+- Typeless 2.5.0 的 Free 周额度显示为 `已用 / 每周上限 words/字`。最近一次官方可见快照会在
+  内存中保留最多 5 分钟，以跨过更新说明或设置窗口的短暂遮挡；缓存按当前邮箱和 Typeless PID
+  隔离、保留原观察时间，不写文件、不导出，超过窗口立即回到 unknown。
 - “诊断”页说明账号目录、Keychain、Typeless 安装/运行和额度来源，不输出秘密。
 
 ## 安全切换
@@ -76,7 +80,7 @@ Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才
 
 每次切换都按下面的事务执行：
 
-1. Preflight 要求当前账号已管理、额度新鲜、目标可用，并从 Typeless 2.4.0 可见控件明确
+1. Preflight 要求当前账号已管理、额度新鲜、目标可用，并从 Typeless 2.4/2.5 可见控件明确
    证明当前空闲。正在录音、仍在处理转录或活动状态未知时直接停止。
 2. 打开固定的 HTTPS 官方登录页；没有浏览器脚本、token 注入或 Typeless 私有文件修改。
 3. 最多 90 秒有限验证。只有本次请求后重新读取到目标邮箱和新鲜额度，才显示成功。
@@ -130,13 +134,13 @@ v1、0700/0600 权限，不含邮箱、密码、token、Cookie 或设备身份�
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
 
-## 当前 Beta（v0.0.1-beta.1）
+## 当前 Beta（v0.0.1-beta.2）
 
-- [Typeless++ v0.0.1 Beta 1 Release](https://github.com/timmyagentic/typeless-plusplus/releases/tag/v0.0.1-beta.1)
-- App 版本：`0.0.1 (7)`
+- [Typeless++ v0.0.1 Beta 2 Release](https://github.com/timmyagentic/typeless-plusplus/releases/tag/v0.0.1-beta.2)
+- App 版本：`0.0.1 (8)`
 - 平台：macOS 13+，Apple Silicon arm64
-- 推荐资产：`TypelessPlusPlus-0.0.1-beta.1-macos-arm64.dmg`
-- 备用资产：`TypelessPlusPlus-0.0.1-beta.1-macos-arm64.zip`
+- 推荐资产：`TypelessPlusPlus-0.0.1-beta.2-macos-arm64.dmg`
+- 备用资产：`TypelessPlusPlus-0.0.1-beta.2-macos-arm64.zip`
 - 校验：两种格式均提供 `.sha256` 文件
 
 这是 prerelease。真实服务器升级弹窗的自动关闭，以及真实账号的完整切换/恢复，仍需在对应
@@ -250,8 +254,9 @@ log stream --predicate 'subsystem == "io.github.timmyagentic.TypelessQuiet"'
 只有它实际出现时才能确认 Typeless 当前版本暴露的 AX Role、层级和几何仍与规则一致。
 在完成这项现场验证前，真实自动关闭行为应视为 `UNVERIFIED`。
 
-当前账号只读识别依赖 Typeless 2.4.0 的本地白名单字段；额度读取依赖当前界面实际暴露
-`已用 / 总量` 文本。Typeless 未运行或界面没有该文本时额度会显示“未知”，不会沿用为新鲜值。
+当前账号只读识别依赖 Typeless 2.4/2.5 的本地白名单字段；额度读取依赖官方界面实际暴露
+`已用 / 总量 words/字` 文本。Typeless 未运行、邮箱/PID 改变或可见快照超过 5 分钟时额度会
+显示“未知”；短暂遮挡只能复用原观察时间的内存快照，不会伪造新鲜值。
 
 安全切换的状态机、官方 URL 边界和 fixture 成功/失败/恢复路径可以自动验证；真实切换仍需要
 用户在 Typeless 官方页面完成登录。没有指定可用目标账号时，不会在 QA 中擅自改变真实登录态。

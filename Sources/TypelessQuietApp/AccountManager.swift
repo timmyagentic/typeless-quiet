@@ -316,7 +316,10 @@ final class AccountManager: ObservableObject {
             items.append(AccountDiagnosticItem(
                 id: "quota",
                 title: "额度读取",
-                detail: quotaDiagnosticDetail(result.state.quota),
+                detail: quotaDiagnosticDetail(
+                    result.state.quota,
+                    provenance: result.quotaProvenance
+                ),
                 level: quotaDiagnosticLevel(result.state.quota)
             ))
             items.append(AccountDiagnosticItem(
@@ -346,13 +349,21 @@ final class AccountManager: ObservableObject {
         performSelfCheck()
     }
 
-    private func quotaDiagnosticDetail(_ quota: QuotaSnapshot?) -> String {
+    private func quotaDiagnosticDetail(
+        _ quota: QuotaSnapshot?,
+        provenance: TypelessQuotaReadProvenance
+    ) -> String {
         guard let quota else {
-            return "当前界面和白名单本地字段都未暴露额度，显示为未知"
+            return "Typeless 官方主界面和白名单本地字段都未暴露额度，显示为未知"
         }
-        let source = switch quota.source {
-        case .typelessAccessibility: "Typeless 可见 Accessibility 文本"
-        case .typelessLocalStorage: "Typeless 只读本地状态"
+        let source = switch provenance {
+        case .unavailable: "未知来源"
+        case .localStorage: "Typeless 只读本地状态"
+        case .visibleAccessibility: "Typeless 官方可见周额度"
+        case .cachedAccessibility:
+            "最近一次官方可见周额度（界面暂时被遮挡）"
+        case .visibleWeeklyLimitReached:
+            "Typeless 官方界面（每周限制已达）"
         }
         if quota.isFresh() {
             return "来自 \(source)，快照新鲜"

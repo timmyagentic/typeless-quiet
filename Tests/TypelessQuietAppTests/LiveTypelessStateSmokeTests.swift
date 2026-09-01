@@ -4,11 +4,11 @@ import XCTest
 @testable import TypelessQuietCore
 
 final class LiveTypelessStateSmokeTests: XCTestCase {
-    func testReadsCurrentTypeless240IdentityWithoutPrintingValues() throws {
+    func testReadsCurrentTypeless250IdentityWithoutPrintingValues() throws {
         try requireLiveQA()
         let result = try TypelessCurrentStateReader().read()
 
-        XCTAssertEqual(result.appVersion, "2.4.0")
+        XCTAssertEqual(result.appVersion, "2.5.0")
         XCTAssertTrue(result.appRunning)
         XCTAssertNotNil(result.state.email)
     }

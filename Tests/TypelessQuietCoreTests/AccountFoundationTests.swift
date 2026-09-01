@@ -197,6 +197,16 @@ final class AccountFoundationTests: XCTestCase {
         XCTAssertNil(VisibleQuotaParser.parse(["August 31 / 2026"], observedAt: observedAt))
     }
 
+    func testRecognizesTypeless250WeeklyLimitReachedWithoutGuessingALimit() {
+        XCTAssertTrue(VisibleQuotaParser.indicatesWeeklyLimitReached(["已达到每周限制"]))
+        XCTAssertTrue(VisibleQuotaParser.indicatesWeeklyLimitReached(["Weekly limit reached"]))
+        XCTAssertTrue(VisibleQuotaParser.indicatesWeeklyLimitReached(["每週限制已達"]))
+
+        XCTAssertFalse(VisibleQuotaParser.indicatesWeeklyLimitReached(["每周限制即将到达"]))
+        XCTAssertFalse(VisibleQuotaParser.indicatesWeeklyLimitReached(["Weekly limit resets tomorrow"]))
+        XCTAssertNil(VisibleQuotaParser.parse(["已达到每周限制"]))
+    }
+
     func testMergesVisibleQuotaIntoLocalIdentity() throws {
         let state = CurrentTypelessState(
             email: "person@example.com",

@@ -305,6 +305,41 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(diagnostic?.detail.contains("快照新鲜") == true)
     }
 
+    func testDiagnosticsDistinguishTemporarilyCachedOfficialQuota() {
+        let directoryStore = FakeDirectoryStore()
+        let quota = QuotaSnapshot(
+            usedCharacters: 855,
+            limitCharacters: 8_000,
+            observedAt: Date(),
+            source: .typelessAccessibility
+        )
+        let result = TypelessStateReadResult(
+            state: CurrentTypelessState(
+                email: "person@example.com",
+                displayName: "Person",
+                planName: "Free",
+                quota: quota,
+                observedAt: Date(),
+                sourceModifiedAt: Date()
+            ),
+            storageURL: directoryStore.fileURL,
+            appVersion: "2.5.0",
+            appRunning: true,
+            quotaProvenance: .cachedAccessibility
+        )
+
+        let manager = AccountManager(
+            directoryStore: directoryStore,
+            secretStore: FakeSecretStore(),
+            stateReader: StubStateReader(result: result)
+        )
+
+        let diagnostic = manager.diagnostics.first { $0.id == "quota" }
+        XCTAssertEqual(diagnostic?.level, .success)
+        XCTAssertTrue(diagnostic?.detail.contains("最近一次官方可见周额度") == true)
+        XCTAssertTrue(diagnostic?.detail.contains("界面暂时被遮挡") == true)
+    }
+
     private func makeFixture() throws -> (
         manager: AccountManager,
         secretStore: FakeSecretStore,
