@@ -23,7 +23,7 @@ Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授�
 
 ![Typeless++ DMG 安装窗口](docs/assets/typeless-plusplus-dmg.png)
 
-> 最近公开版本 `v0.1.5` 仍使用旧品牌 Typeless Quiet，提供 macOS 13+ Apple Silicon
+> 当前 Beta `v0.0.1-beta.1` 是首个 Typeless++ 品牌发行版，提供 macOS 13+ Apple Silicon
 > arm64 下载。App 已使用 Developer ID 签名、
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
@@ -130,7 +130,19 @@ v1、0700/0600 权限，不含邮箱、密码、token、Cookie 或设备身份�
 - 构建时需要 Xcode/Swift 工具链
 - 运行时需要用户手动授予“辅助功能”权限
 
-## 最近公开版本（旧品牌 v0.1.5）
+## 当前 Beta（v0.0.1-beta.1）
+
+- [Typeless++ v0.0.1 Beta 1 Release](https://github.com/timmyagentic/typeless-plusplus/releases/tag/v0.0.1-beta.1)
+- App 版本：`0.0.1 (7)`
+- 平台：macOS 13+，Apple Silicon arm64
+- 推荐资产：`TypelessPlusPlus-0.0.1-beta.1-macos-arm64.dmg`
+- 备用资产：`TypelessPlusPlus-0.0.1-beta.1-macos-arm64.zip`
+- 校验：两种格式均提供 `.sha256` 文件
+
+这是 prerelease。真实服务器升级弹窗的自动关闭，以及真实账号的完整切换/恢复，仍需在对应
+现场条件出现时完成 E2E；Beta 不会把这些未执行项写成已验证。
+
+## 历史正式版本（旧品牌 v0.1.5）
 
 - [Typeless Quiet v0.1.5 Release](https://github.com/timmyagentic/typeless-plusplus/releases/tag/v0.1.5)
 - 平台：macOS 13+，Apple Silicon arm64
