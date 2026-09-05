@@ -28,10 +28,19 @@ Typeless++ 是非官方项目，与 Typeless 或 Simply LLC 没有隶属、授�
 > Apple notarization 并 staple 公证票据，可通过 Gatekeeper 验证。服务器下发提示的真实
 > 客户端 AX 结构仍待现场验证。
 
+## 应用内更新
+
+当前源码已接入 Sparkle：后台发现新版本时显示应用内更新入口，点击后下载和校验，准备完成再提示重启。菜单栏提供「检查更新」「更新设置」，主窗口底部也可进入。
+
+![应用内更新准备完成](docs/assets/updater/ready-to-restart.png)
+
+默认自动检查，可选择「仅正式版」或「Beta 与正式版」。Beta 可以升级至更高构建号的正式版，旧 Quiet 版本不会因版本号较大而被误判为更新。
+
+这项能力尚待随新版本发布；现有 Beta 1 / Beta 2 没有更新器，第一次仍需手动安装新版本。发布步骤与隔离 QA 见 [自动更新说明](docs/UPDATES.md)。
+
 ## 为什么不是 Hammerspoon
 
-Typeless++ 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm、
-Electron 或第三方 Swift 包。它不会修改 Typeless 应用包，也不会拦截网络请求。
+Typeless++ 直接使用 macOS Accessibility API，不依赖 Hammerspoon、Node、npm 或 Electron；应用内更新使用 Sparkle。它不会修改 Typeless 应用包，也不会拦截网络请求。
 
 应用需要常驻，但只在 Typeless 运行时连接其 Accessibility 树。它优先响应窗口和布局的
 Accessibility 通知，并只保留低频 watchdog；通知完全不可用时才降级轮询。Typeless 未

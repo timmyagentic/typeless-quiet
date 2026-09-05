@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 
-swift test --package-path "$repo_root"
+swift test --disable-keychain --package-path "$repo_root"
 swift build \
   --package-path "$repo_root" \
   --configuration release \
@@ -28,9 +28,15 @@ test "$(plutil -extract CFBundleExecutable raw -o - \
 test "$(plutil -extract CFBundleShortVersionString raw -o - \
   "$app_path/Contents/Info.plist")" = "0.0.1"
 test "$(plutil -extract CFBundleVersion raw -o - \
-  "$app_path/Contents/Info.plist")" = "8"
+  "$app_path/Contents/Info.plist")" = "9"
 test "$(plutil -extract LSUIElement raw -o - "$app_path/Contents/Info.plist")" = "true"
 test "$(plutil -extract CFBundleIconFile raw -o - "$app_path/Contents/Info.plist")" = "AppIcon"
+test -x "$app_path/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"
+test -d "$app_path/Contents/Frameworks/Sparkle.framework/Versions/B/Updater.app"
+otool -L "$binary_path" | grep -q '@rpath/Sparkle.framework/'
+otool -l "$binary_path" | grep -q '@executable_path/../Frameworks'
+python3 -m unittest discover -s "$repo_root/scripts/tests" -v
+python3 "$repo_root/scripts/update-feed.py" validate "$repo_root/appcast.xml"
 test -x "$binary_path"
 test -f "$app_path/Contents/Resources/AppIcon.icns"
 cmp -s "$repo_root/Resources/AppIcon.icns" "$app_path/Contents/Resources/AppIcon.icns"

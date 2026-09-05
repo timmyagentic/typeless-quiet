@@ -34,6 +34,16 @@ cp "$repo_root/Resources/PkgInfo" "$app_path/Contents/PkgInfo"
 cp "$repo_root/Resources/AppIcon.icns" "$app_path/Contents/Resources/AppIcon.icns"
 chmod 755 "$app_path/Contents/MacOS/TypelessPlusPlus"
 
+# SwiftPM links binary frameworks but does not embed their runtime helpers.
+sparkle_source="$repo_root/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+if [[ ! -d "$sparkle_source" ]]; then
+  echo "Resolved Sparkle framework is missing" >&2
+  exit 1
+fi
+mkdir -p "$app_path/Contents/Frameworks"
+ditto "$sparkle_source" "$app_path/Contents/Frameworks/Sparkle.framework"
+install_name_tool -add_rpath '@executable_path/../Frameworks' "$app_path/Contents/MacOS/TypelessPlusPlus"
+
 plutil -lint "$app_path/Contents/Info.plist" >/dev/null
 codesign_arguments=(
   --force
@@ -45,6 +55,14 @@ if [[ "$code_sign_identity" == "-" ]]; then
 else
   codesign_arguments+=(--timestamp)
 fi
+# Sign from the inside out with the same identity. Do not use --deep to sign.
+sparkle="$app_path/Contents/Frameworks/Sparkle.framework/Versions/B"
+for helper in "$sparkle"/XPCServices/*.xpc "$sparkle/Autoupdate" "$sparkle/Updater.app"; do
+  if [[ -e "$helper" ]]; then
+    codesign "${codesign_arguments[@]}" --preserve-metadata=entitlements "$helper"
+  fi
+done
+codesign "${codesign_arguments[@]}" "$app_path/Contents/Frameworks/Sparkle.framework"
 codesign "${codesign_arguments[@]}" "$app_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 

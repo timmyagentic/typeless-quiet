@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Typeless++ Updates</title>
+    <link>https://github.com/timmyagentic/typeless-plusplus</link>
+    <description>Typeless++ stable and opt-in beta updates</description>
+    <language>zh-CN</language>
+  </channel>
+</rss>

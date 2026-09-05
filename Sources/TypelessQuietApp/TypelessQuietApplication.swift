@@ -1,6 +1,16 @@
 import SwiftUI
 
 @main
+enum TypelessBootstrap {
+    static func main() {
+        if UpdaterController.isIsolatedQA(.main) {
+            TypelessUpdaterQAApplication.main()
+        } else {
+            TypelessQuietApplication.main()
+        }
+    }
+}
+
 struct TypelessQuietApplication: App {
     @NSApplicationDelegateAdaptor(TypelessQuietAppDelegate.self)
     private var appDelegate
@@ -121,12 +131,41 @@ struct TypelessQuietApplication: App {
 
             Divider()
 
+            UpdateMenu(updater: model.updater)
+
+            Divider()
+
             Button("退出 Typeless++") {
                 model.quit()
             }
         } label: {
-            Label("Typeless++", systemImage: model.statusSymbol)
+            Label("Typeless++", systemImage: model.updater.hasUpdate ? "arrow.down.circle.fill" : model.statusSymbol)
         }
         .menuBarExtraStyle(.menu)
+    }
+}
+
+/// Only a separately identified QA bundle may run the updater without connecting
+/// to Typeless, the account stores, Accessibility or login-item registration.
+private struct TypelessUpdaterQAApplication: App {
+    @NSApplicationDelegateAdaptor(TypelessQuietAppDelegate.self) private var appDelegate
+    @StateObject private var updater: UpdaterController
+
+    var body: some Scene {
+        MenuBarExtra("Typeless++ Update QA", systemImage: "arrow.down.circle") {
+            UpdateMenu(updater: updater)
+            Button("退出 QA") { NSApplication.shared.terminate(nil) }
+        }
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("打开更新") { updater.present() }
+            }
+        }
+    }
+
+    init() {
+        let updater = UpdaterController()
+        _updater = StateObject(wrappedValue: updater)
+        MainWindowRequestRouter.handler = { [weak updater] in updater?.present() }
     }
 }
