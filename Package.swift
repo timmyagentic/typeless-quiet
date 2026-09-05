@@ -11,11 +11,14 @@ let package = Package(
         .library(name: "TypelessPlusPlusCore", targets: ["TypelessQuietCore"]),
         .executable(name: "TypelessPlusPlus", targets: ["TypelessQuietApp"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.9.6"),
+    ],
     targets: [
         .target(name: "TypelessQuietCore"),
         .executableTarget(
             name: "TypelessQuietApp",
-            dependencies: ["TypelessQuietCore"]
+            dependencies: ["TypelessQuietCore", .product(name: "Sparkle", package: "Sparkle")]
         ),
         .testTarget(
             name: "TypelessQuietCoreTests",

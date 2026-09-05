@@ -137,6 +137,7 @@ private struct MainWindowView: View {
 
                 Spacer()
 
+                UpdateBadge(updater: model.updater)
                 Button("退出", action: model.quit)
             }
             .padding(.horizontal, 24)

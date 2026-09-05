@@ -6,6 +6,7 @@ import TypelessQuietCore
 
 @MainActor
 final class QuietModel: ObservableObject {
+    let updater: UpdaterController
     let accountManager: AccountManager
     let switchCoordinator: SwitchCoordinator
     let quotaGuardController: QuotaGuardController
@@ -29,6 +30,7 @@ final class QuietModel: ObservableObject {
     private var switchUpdates: AnyCancellable?
     private var quotaGuardUpdates: AnyCancellable?
     private var backupUpdates: AnyCancellable?
+    private var updaterUpdates: AnyCancellable?
 
     private lazy var mainWindow = MainWindowController(model: self)
 
@@ -62,6 +64,7 @@ final class QuietModel: ObservableObject {
                 quotaGuardController: resolvedQuotaGuardController,
                 switchCoordinator: resolvedSwitchCoordinator
             )
+        updater = UpdaterController()
         self.accountManager = resolvedAccountManager
         self.switchCoordinator = resolvedSwitchCoordinator
         self.quotaGuardController = resolvedQuotaGuardController
@@ -93,6 +96,9 @@ final class QuietModel: ObservableObject {
             self?.objectWillChange.send()
         }
         quotaGuardUpdates = resolvedQuotaGuardController.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        updaterUpdates = updater.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
         backupUpdates = resolvedBackupController.objectWillChange.sink { [weak self] _ in
